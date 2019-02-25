@@ -69,7 +69,9 @@ class AcMat:
 		self.spec = spec			# [R,G,B]
 		self.shi = shi				# integer
 		self.trans = trans			# float
-
+		
+		self.rgba = [self.rgb[0],self.rgb[1],self.rgb[2],1.0-self.trans]
+		
 		self.bmat_keys = {}			# dictionary list of blender materials
 		self.bmat_keys.setdefault(None)
 		self.bl_material = None		# untextured material
@@ -97,15 +99,17 @@ class AcMat:
 		# shininess          : 0-128
 		# transparency       : 0-1
 		#
-		bl_mat.specular_shader = 'PHONG'
-		bl_mat.diffuse_color = self.rgb
-		bl_mat.diffuse_intensity = 1.0
-		bl_mat.ambient = (self.amb[0] + self.amb[1] + self.amb[2]) / 3.0
-		if self.import_config.use_amb_as_mircol:
-				bl_mat.mirror_color = self.amb
-		bl_mat.emit = ((self.emis[0] + self.emis[1] + self.emis[2]) / 3.0) * 2
-		if self.import_config.use_emis_as_mircol:
-				bl_mat.mirror_color = self.emis
+		#bl_mat.specular_shader = 'PHONG' changed in 2.80
+
+		bl_mat.diffuse_color = self.rgba
+		
+		#bl_mat.diffuse_intensity = 1.0 not supported by 2.80
+		#bl_mat.ambient = (self.amb[0] + self.amb[1] + self.amb[2]) / 3.0  not supported in 2.80
+		#if self.import_config.use_amb_as_mircol:
+		#		bl_mat.mirror_color = self.amb
+		#bl_mat.emit = ((self.emis[0] + self.emis[1] + self.emis[2]) / 3.0) * 2 not supported in 2.80
+		#if self.import_config.use_emis_as_mircol:
+		#		bl_mat.mirror_color = self.emis
 		bl_mat.specular_color = self.spec
 		bl_mat.specular_intensity = 1.0
 
@@ -113,14 +117,14 @@ class AcMat:
 		acMax = 128.0
 		blMin = 1.0
 		blMax = 511.0
-		acRange = (acMax - acMin)  
-		blRange = (blMax - blMin)  
-		bl_mat.specular_hardness = int(round((((float(self.shi) - acMin) * blRange) / acRange) + blMin, 0))
+		acRange = (acMax - acMin)
+		blRange = (blMax - blMin)
+		#bl_mat.specular_hardness = int(round((((float(self.shi) - acMin) * blRange) / acRange) + blMin, 0)) not supported in 2.80
 
-		bl_mat.alpha = 1.0 - self.trans
+		
 		#if bl_mat.alpha < 1.0: this is disabled cause texture may need transparency to be set, even if material is opaque.
-		bl_mat.use_transparency = True#self.import_config.use_transparency
-		bl_mat.transparency_method = self.import_config.transparency_method
+		#bl_mat.use_transparency = True#self.import_config.use_transparency not supported in 2.80
+		#bl_mat.transparency_method = self.import_config.transparency_method 2.80..
 		
 		return bl_mat
 
@@ -143,19 +147,25 @@ class AcMat:
 			else:
 				bl_mat = bpy.data.materials.new(self.name)
 				bl_mat = self.make_blender_mat(bl_mat)
-				bl_mat.use_face_texture = True
-				bl_mat.use_face_texture_alpha = True
+				#bl_mat.use_face_texture = True       these 2 not supported in 2.80
+				#bl_mat.use_face_texture_alpha = True
 				
-				tex_slot = bl_mat.texture_slots.add()
-				tex_slot.texture = self.get_blender_texture(tex_name, texrep)
-				tex_slot.texture_coords = 'UV'
-				tex_slot.alpha_factor = 1.0
-				tex_slot.use_map_alpha = True
-				tex_slot.use = True
-				tex_slot.uv_layer = 'UVMap'
-				tex_slot.texture.repeat_x = 1#texrep[0]
-				tex_slot.texture.repeat_y = 1#texrep[1]
-				tex_slot.blend_type = 'MULTIPLY'
+				bl_mat.use_nodes = True
+				bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+				texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
+				texImage.image = bpy.data.images.load(tex_name,True)
+				bl_mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
+								
+				#tex_slot = bl_mat.texture_slots.add()
+				#tex_slot.texture = self.get_blender_texture(tex_name, texrep)
+				#tex_slot.texture_coords = 'UV'
+				#tex_slot.alpha_factor = 1.0
+				#tex_slot.use_map_alpha = True
+				#tex_slot.use = True
+				#tex_slot.uv_layer = 'UVMap'
+				#tex_slot.texture.repeat_x = 1#texrep[0]
+				#tex_slot.texture.repeat_y = 1#texrep[1]
+				#tex_slot.blend_type = 'MULTIPLY'
 				self.bmat_keys[tex_name+str(texrep[0])+'-'+str(texrep[1])] = bl_mat
 		return bl_mat
 
@@ -369,7 +379,7 @@ class AcObj:
 			# cause the global_matrix is applied when making the children of world/scene.
 			self4 = self.rotation.to_4x4()
 			self3 = mathutils.Matrix.Translation(self.location)
-			self.import_config.global_matrix = self4 * self.import_config.global_matrix
+			self.import_config.global_matrix = self4 @ self.import_config.global_matrix
 			self.import_config.global_matrix[0][3] = self.location[0]
 			self.import_config.global_matrix[1][3] = self.location[1]
 			self.import_config.global_matrix[2][3] = self.location[2]
@@ -572,26 +582,26 @@ class AcObj:
 		if self.bl_obj:
 			self3 = mathutils.Matrix.Translation(self.location)
 			self4 = self.rotation.to_4x4()
-			self.bl_obj.matrix_basis = self3 * self4
+			self.bl_obj.matrix_basis = self3 @ self4
 
 			if self.ac_parent and self.ac_parent.type.lower() == 'world':
 				matrix_basis = self.bl_obj.matrix_basis
-				matrix_basis = self.import_config.global_matrix * matrix_basis # order of this multiplication matters
+				matrix_basis = self.import_config.global_matrix @ matrix_basis # order of this multiplication matters
 				self.bl_obj.matrix_basis = matrix_basis
 
 			if not self.ac_parent:
 				# this is for the case where there is no world object
 				matrix_basis = self.bl_obj.matrix_basis
-				matrix_basis = self.import_config.global_matrix * matrix_basis # order of this multiplication matters
+				matrix_basis = self.import_config.global_matrix @ matrix_basis # order of this multiplication matters
 				self.bl_obj.matrix_basis = matrix_basis
 			
-			self.import_config.context.scene.objects.link(self.bl_obj)
+			self.import_config.context.scene.collection.objects.link(self.bl_obj)
 # There's a bug somewhere - this ought to work....
 			self.import_config.context.scene.objects.active = self.bl_obj
 #			bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')
 
 			if self.hidden == True:
-				self.bl_obj.hide = True
+				self.bl_obj.hide_viewport = True
 			
 
 		TRACE("{0}+-{1} ({2})".format(str_pre, self.name, self.data))
@@ -996,12 +1006,12 @@ class ImportAC3D:
 		for obj in self.fullList:# only traverse what we import, not what is already in Blender
 			if obj.matrix_basis.is_negative:
 				# when negative scaling is applied, normals might be flipped, so we apply the scaling in those cases.
-				obj.select = True
+				obj.select_set(True)
 				bpy.context.scene.objects.active = obj
 				bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 		for obj in bpy.data.objects:
-			obj.select = False
+			obj.select_set(False)
 		for obj in top_level_objects:
 			# imported top level objects will be selected
-			obj.select = True
+			obj.select_set(True)

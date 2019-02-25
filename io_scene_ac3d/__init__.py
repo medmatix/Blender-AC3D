@@ -34,8 +34,8 @@ bl_info = {
 	"name": "AC3D (.ac) format",
 	"description": "Inivis AC3D model exporter for Blender.",
 	"author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr.",
-	"version": (2,26),
-	"blender" : (2,6,0),
+	"version": (3,00),
+	"blender" : (2,80,0),
 	"api": 41098,
 	"location": "File > Import-Export",
 	"warning": "",
@@ -61,18 +61,20 @@ def menu_func_export(self, context):
 	self.layout.operator(ExportAC3D.bl_idname, text='AC3D (.ac)')
 
 
-def register():
-	bpy.utils.register_module(__name__)
-	bpy.types.INFO_MT_file_import.append(menu_func_import)
-	bpy.types.INFO_MT_file_export.append(menu_func_export)
+#def register():
+#	bpy.utils.register_module(__name__)
+#	bpy.types.INFO_MT_file_import.append(menu_func_import)
+#	bpy.types.INFO_MT_file_export.append(menu_func_export)
 
-def unregister():
-	bpy.utils.unregister_module(__name__)
-	bpy.types.INFO_MT_file_import.remove(menu_func_import)
-	bpy.types.INFO_MT_file_export.remove(menu_func_export)
+#def unregister():
+#	bpy.utils.unregister_module(__name__)
+#	bpy.types.INFO_MT_file_import.remove(menu_func_import)
+#	bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
-if __name__ == "__main__":
-	register()
+#if __name__ == "__main__":
+#	register()
+
+
 
 class ImportAC3D(bpy.types.Operator, ImportHelper):
 	'''Import from AC3D file format (.ac)'''
@@ -81,9 +83,9 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 	bl_options = {'PRESET'}	
 
 	filename_ext = '.ac'
-	filter_glob = StringProperty(default='*.ac', options={'HIDDEN'})
+	filter_glob : StringProperty(default='*.ac', options={'HIDDEN'})
 
-	axis_forward = EnumProperty(
+	axis_forward : EnumProperty(
 							name="Forward",
 							items=(('X', "X Forward", ""),
 								('Y', "Y Forward", ""),
@@ -95,7 +97,7 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 							default='-Z',
 						)
 
-	axis_up = EnumProperty(
+	axis_up : EnumProperty(
 							name="Up",
 							items=(('X', "X Up", ""),
 								('Y', "Y Up", ""),
@@ -107,13 +109,13 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 							default='Y',
 						)
 
-#	use_transparency = BoolProperty(
+#	use_transparency : BoolProperty(
 #							name="Use Transparency",
 #							description="Set transparency in Blender materials. If unchecked, no objects will have any transparency set.",
 #							default=True,
 #						)
 
-	transparency_method = EnumProperty(
+	transparency_method : EnumProperty(
 							name="Transparency Method",
 							description="The transparency method that will be set in materials.",
 							items=(('MASK', "Mask", ""),
@@ -122,33 +124,33 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 							),
 							default='Z_TRANSPARENCY',
 						)
-#	use_auto_smooth = BoolProperty(
+#	use_auto_smooth : BoolProperty(
 #							name="Auto Smooth",
 #							description="Use object auto smooth if normal angles are beneath Crease angle",
 #							default=True,
 #						)
-	use_emis_as_mircol = BoolProperty(
+	use_emis_as_mircol : BoolProperty(
 							name="Set Emis to Mirror colour",
 							description="Set AC3D Emission colour into Blender Mirror colour",
 							default=False,
 						)
 
-	use_amb_as_mircol = BoolProperty(
+	use_amb_as_mircol : BoolProperty(
 							name="Set Amb to Mirror colour",
 							description="Set AC3D Ambient colour into Blender Mirror colour",
 							default=False,
 						)
-#	display_transparency = BoolProperty(
+#	display_transparency : BoolProperty(
 #							name="Transparency",
 #							description="If unchecked, no objects will display any transparency.",
 #							default=True,
 #						)
-	display_textured_solid = BoolProperty(
+	display_textured_solid : BoolProperty(
 							name="Display textured solid",
 							description="Show textures applied when in Solid view (notice that transparency for materials is then only seen in Material view and Render view)",
 							default=False,
 						)
-#	hide_hidden_objects = BoolProperty(
+#	hide_hidden_objects : BoolProperty(
 #							name="Hide hidden objects",
 #							description="Newer AC3D format supports hiding objects. If checked those objects will be Restrict viewport visibility in Blender (wont be seen until the small eye in Outliner is clicked).",
 #							default=True,
@@ -181,8 +183,8 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 class MessageOperator(bpy.types.Operator):
     bl_idname = "error.message"
     bl_label = "Message"
-    type = StringProperty()
-    message = StringProperty()
+    type : StringProperty()
+    message : StringProperty()
  
     def execute(self, context):
         self.report({'INFO'}, self.message)
@@ -211,8 +213,8 @@ class OkOperator(bpy.types.Operator):
     def execute(self, context):
         return {'FINISHED'}
 
-bpy.utils.register_class(OkOperator)
-bpy.utils.register_class(MessageOperator)
+#bpy.utils.register_class(OkOperator)
+#bpy.utils.register_class(MessageOperator)
 
 class ExportAC3D(bpy.types.Operator, ExportHelper):
 
@@ -225,12 +227,12 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 
 	v_info = bl_info["version"]
 
-	filter_glob = StringProperty(
+	filter_glob : StringProperty(
 							default='*.ac',
 							options={'HIDDEN'}
 							)
 
-	axis_forward = EnumProperty(
+	axis_forward : EnumProperty(
 								name="Forward",
 								items=(('X', "X Forward", ""),
 									('Y', "Y Forward", ""),
@@ -242,7 +244,7 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 								default='-Z',
 								)
 
-	axis_up = EnumProperty(
+	axis_up : EnumProperty(
 							name="Up",
 							items=(('X', "X Up", ""),
 								('Y', "Y Up", ""),
@@ -253,7 +255,7 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 								),
 							default='Y',
 							)
-	export_rots    = EnumProperty(
+	export_rots    : EnumProperty(
 							name="Matrices",
 							description="Some loaders interpret the matrices wrong, to be safe, use Apply before Export.",
 							items=(('apply', "Apply before export", ""),
@@ -261,52 +263,52 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 								),
 							default='apply',
 							)
-	use_render_layers = BoolProperty(
+	use_render_layers : BoolProperty(
 							name="Only Render Layers",
 							description="Only export from selected render layers",
 							default=True,
 							)
-	use_selection = BoolProperty(
+	use_selection : BoolProperty(
 							name="Selection Only",
 							description="Export selected objects only",
 							default=False,
 							)
-	merge_materials = BoolProperty(
+	merge_materials : BoolProperty(
 							name="Merge materials",
 							description="Merge materials that are identical",
 							default=False,
 							)
-	mircol_as_emis = BoolProperty(
+	mircol_as_emis : BoolProperty(
 							name="Mirror col to Emis",
 							description="Export Blender mirror colour to AC3D emissive colour",
 							default=False,
 							)
-	mircol_as_amb = BoolProperty(
+	mircol_as_amb : BoolProperty(
 							name="Mirror col to Amb",
 							description="Export Blender mirror colour to AC3D ambient colour",
 							default=False,
 							)
-	amb_as_diff = BoolProperty(
+	amb_as_diff : BoolProperty(
 							name="Amb same as Diff",
 							description="Export AC3D ambient colour to be like Diffuse color",
 							default=False,
 							)
-	export_lines = BoolProperty(
+	export_lines : BoolProperty(
 							name="Export lines",
 							description="Export standalone edges, bezier curves etc. as AC3D lines. Will make export take longer.",
 							default=False,
 							)
-	export_hidden = BoolProperty(
+	export_hidden : BoolProperty(
 							name="Export hidden objects",
 							description="Newer AC3D format supports hiding objects. If checked those objects will be exported as hidden. (notice that in older loaders they might show up, or the loader might choke on those new tokens)",
 							default=False,
 						)
-	export_lights = BoolProperty(
+	export_lights : BoolProperty(
 							name="Export lights",
 							description="With this checked lights will also be exported. Notice they will all become pointlights. If not checked, any geometry that might have lamps as parent wont be output.",
 							default=False,
 						)
-	crease_angle = FloatProperty(
+	crease_angle : FloatProperty(
 							name="Default Crease Angle",
 							description="Default crease/smooth angle for exported .ac faces that has not explicit set it.",
 							default=radians(40.0),
@@ -315,7 +317,7 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 							subtype="ANGLE",
 							)
 # This behaviour from the original exporter - not applicable?
-#	no_split = BoolProperty(
+#	no_split : BoolProperty(
 #							name="No Split",
 #							description="don't split meshes with multiple textures (or both textured and non-textured polygons)",
 #							default=True,
@@ -351,3 +353,23 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 
 		return {'FINISHED'}
 
+__classes__ = (
+    ExportAC3D,
+    ImportAC3D,
+    MessageOperator,
+    OkOperator,
+)
+
+def register():
+    for c in __classes__:
+        bpy.utils.register_class(c)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+def unregister():
+    for c in reversed(__classes__):
+        bpy.utils.unregister_class(c)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+
+if __name__ == "__main__":
+    register()

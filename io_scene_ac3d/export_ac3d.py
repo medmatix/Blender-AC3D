@@ -156,13 +156,13 @@ class ExportAC3D:
 			# proxy is selected. We therefore consider all objects from libraries as
 			# selected, as the only possibility to get them considered is if their
 			# proxy should be exported.
-			hidden = ob.hide
+			hidden = ob.hide_viewport
 			if self.export_conf.export_hidden:
-				ob.hide = False
+				ob.hide_viewport = False
 
 			if 		(not self.export_conf.use_render_layers or ob.is_visible(self.export_conf.context.scene))\
-				and (not self.export_conf.use_selection or ob.select or ignore_select):
-				ob.hide = hidden
+				and (not self.export_conf.use_selection or ob.select_get() or ignore_select):
+				ob.hide_viewport = hidden
 				# We need to check for dupligroups first as every type of object can be
 				# converted to a dupligroup without removing the data from the old type.
 				if ob.dupli_type == 'GROUP':
@@ -170,7 +170,7 @@ class ExportAC3D:
 					children = [child for child in ob.dupli_group.objects
 					                            if not child.parent
 					                            or not child.parent.name in ob.dupli_group.objects]
-					self.parseLevel(ac_ob, children, True, local_transform * ob.matrix_world)
+					self.parseLevel(ac_ob, children, True, local_transform @ ob.matrix_world)
 				elif ob.type in ['MESH', 'LATTICE', 'SURFACE', 'CURVE']:
 					ac_ob = AC3D.Poly(ob.name, ob, self.export_conf, local_transform)
 				elif ob.type == 'ARMATURE':
@@ -191,7 +191,7 @@ class ExportAC3D:
 					ac_ob = AC3D.Light(ob.name, ob, self.export_conf, local_transform)
 				else:
 					TRACE('Skipping object {0} (type={1})'.format(ob.name, ob.type))
-			ob.hide = hidden
+			ob.hide_viewport = hidden
 			if ac_ob:
 				parent.addChild(ac_ob)
 				next_parent = ac_ob

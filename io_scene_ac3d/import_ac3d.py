@@ -153,9 +153,9 @@ class AcMat:
 				bl_mat.use_nodes = True
 				bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
 				texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
-				texImage.image = bpy.data.images.load(tex_name,True)
+				texImage.image = self.get_blender_image(tex_name)
 				bl_mat.node_tree.links.new(bsdf.inputs['Base Color'], texImage.outputs['Color'])
-								
+
 				#tex_slot = bl_mat.texture_slots.add()
 				#tex_slot.texture = self.get_blender_texture(tex_name, texrep)
 				#tex_slot.texture_coords = 'UV'
@@ -186,7 +186,7 @@ class AcMat:
 					found = True
 
 					try:
-						bl_image = bpy.data.images.load(path)
+						bl_image = bpy.data.images.load(path, check_existing=True)
 					except:
 						TRACE("Failed to load texture: {0}".format(tex_name))
 			
@@ -535,25 +535,25 @@ class AcObj:
 						edge.use_smooth = False
 
 			# apply UV map
-			if has_uv:
-				uvtex = me.uv_textures.new()
-				if uvtex:
-					uvtexdata = me.uv_layers.active.data[:]
+			# if has_uv:
+			# 	uvtex = me.uv_textures.new()
+			# 	if uvtex:
+			# 		uvtexdata = me.uv_layers.active.data[:]
 					
-					uv_pointer = 0
-					for i, face in enumerate(self.face_list):
-						surf = self.surf_face_list[i]
+			# 		uv_pointer = 0
+			# 		for i, face in enumerate(self.face_list):
+			# 			surf = self.surf_face_list[i]
 						
-						if len(surf.uv_refs) >= 3:
+			# 			if len(surf.uv_refs) >= 3:
 
-							for vert_index in range(len(surf.uv_refs)):
-								uvtexdata[uv_pointer+vert_index].uv = [surf.uv_refs[vert_index][0]*self.texrep[0]+self.texoff[0], surf.uv_refs[vert_index][1]*self.texrep[1]+self.texoff[1]]
-							if len(self.tex_name):
-								# we do the check here to allow for import of UV without texture
-								surf_material = me.materials[self.face_mat_list[i]]
+			# 				for vert_index in range(len(surf.uv_refs)):
+			# 					uvtexdata[uv_pointer+vert_index].uv = [surf.uv_refs[vert_index][0]*self.texrep[0]+self.texoff[0], surf.uv_refs[vert_index][1]*self.texrep[1]+self.texoff[1]]
+			# 				if len(self.tex_name):
+			# 					# we do the check here to allow for import of UV without texture
+			# 					surf_material = me.materials[self.face_mat_list[i]]
 								
-								uvtex.data[i].image = surf_material.texture_slots[0].texture.image
-							uv_pointer += len(surf.uv_refs)
+			# 					uvtex.data[i].image = surf_material.texture_slots[0].texture.image
+			# 				uv_pointer += len(surf.uv_refs)
 # uvtexdata does not contain data on lines, so lines cannot be applied UV, sadly
 #					for i, edge in enumerate(self.line_list):
 #						line = self.surf_line_list[i]
@@ -567,8 +567,8 @@ class AcObj:
 #							uvtex.data[i].image = line_material.texture_slots[0].texture.image
 #						uv_pointer += len(line.uv_refs)
 
-			me.show_double_sided = two_sided_lighting
-			self.bl_obj.show_transparent = True#self.import_config.display_transparency
+#			me.show_double_sided = two_sided_lighting
+			self.bl_obj.show_transparent = True # self.import_config.display_transparency
 
 			# apply subdivision modifier
 			if self.subdiv != 0:
@@ -594,15 +594,14 @@ class AcObj:
 				matrix_basis = self.bl_obj.matrix_basis
 				matrix_basis = self.import_config.global_matrix @ matrix_basis # order of this multiplication matters
 				self.bl_obj.matrix_basis = matrix_basis
-			
+
 			self.import_config.context.scene.collection.objects.link(self.bl_obj)
-# There's a bug somewhere - this ought to work....
-			self.import_config.context.scene.objects.active = self.bl_obj
+			bpy.ops.object.select_all(action='DESELECT')
+			self.bl_obj.select_set(True)
 #			bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')
 
 			if self.hidden == True:
 				self.bl_obj.hide_viewport = True
-			
 
 		TRACE("{0}+-{1} ({2})".format(str_pre, self.name, self.data))
 
@@ -840,12 +839,16 @@ class AC3D_OT_Import:
 		self.create_blender_data()
 
 		# Display as either textured solid (transparency only works in one direction) or as textureless solids (transparency works)
-		for bl_screen in bpy.data.screens:
-			for bl_area in bl_screen.areas:
-				for bl_space in bl_area.spaces:
-					if bl_space.type == 'VIEW_3D':
-						bl_space.show_textured_solid = self.import_config.display_textured_solid
+		layout = bpy.data.screens['Layout']
 
+		for bl_area in layout.areas:
+			for bl_space in bl_area.spaces:
+				if bl_space.type == 'VIEW_3D':
+					# bl_space.show_textured_solid = self.import_config.display_textured_solid
+					bl_space.overlay.show_relationship_lines = False
+
+		layout.shading.light = 'MATCAP'
+		layout.shading.color_type = 'MATERIAL'
 
 		return None
 
@@ -1007,7 +1010,7 @@ class AC3D_OT_Import:
 			if obj.matrix_basis.is_negative:
 				# when negative scaling is applied, normals might be flipped, so we apply the scaling in those cases.
 				obj.select_set(True)
-				bpy.context.scene.objects.active = obj
+				bpy.context.scene.collection.objects.active = obj
 				bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
 		for obj in bpy.data.objects:

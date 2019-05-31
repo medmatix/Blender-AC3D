@@ -34,8 +34,8 @@ bl_info = {
 	"name": "AC3D (.ac) format",
 	"description": "Inivis AC3D model exporter for Blender.",
 	"author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr.",
-	"version": (3,00),
-	"blender" : (2,80,0),
+	"version": (3, 00),
+	"blender": (2, 80, 0),
 	"api": 41098,
 	"location": "File > Import-Export",
 	"warning": "",
@@ -54,11 +54,11 @@ if "bpy" in locals():
 		imp.reload(export_ac3d)
 
 def menu_func_import(self, context):
-	self.layout.operator(ImportAC3D.bl_idname, text='AC3D (.ac)')
+	self.layout.operator(AC3D_OT_Import.bl_idname, text='AC3D (.ac)')
 
 
 def menu_func_export(self, context):
-	self.layout.operator(ExportAC3D.bl_idname, text='AC3D (.ac)')
+	self.layout.operator(AC3D_OT_Export.bl_idname, text='AC3D (.ac)')
 
 
 #def register():
@@ -76,7 +76,7 @@ def menu_func_export(self, context):
 
 
 
-class ImportAC3D(bpy.types.Operator, ImportHelper):
+class AC3D_OT_Import(bpy.types.Operator, ImportHelper):
 	'''Import from AC3D file format (.ac)'''
 	bl_idname = 'import_scene.import_ac3d'
 	bl_label = 'Import AC3D'
@@ -170,7 +170,7 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 		keywords["global_matrix"] = global_matrix
 
 		t = time.mktime(datetime.datetime.now().timetuple())
-		import_ac3d.ImportAC3D(self, context, **keywords)
+		import_ac3d.AC3D_OT_Import(self, context, **keywords)
 		t = time.mktime(datetime.datetime.now().timetuple()) - t
 		print('Finished importing in', t, 'seconds')
 
@@ -180,7 +180,7 @@ class ImportAC3D(bpy.types.Operator, ImportHelper):
 #   The error message operator. When invoked, pops up a dialog 
 #   window with the given message.   
 #
-class MessageOperator(bpy.types.Operator):
+class AC3D_OT_MessageOperator(bpy.types.Operator):
     bl_idname = "error.message"
     bl_label = "Message"
     type : StringProperty()
@@ -203,20 +203,20 @@ class MessageOperator(bpy.types.Operator):
         row = self.layout.split(0.80)
         row.label("") 
         row.operator("error.ok")
- 
+
 #
 #   The OK button in the error dialog
 #
-class OkOperator(bpy.types.Operator):
+class AC3D_OT_OkOperator(bpy.types.Operator):
     bl_idname = "error.ok"
     bl_label = "OK"
     def execute(self, context):
         return {'FINISHED'}
 
-#bpy.utils.register_class(OkOperator)
-#bpy.utils.register_class(MessageOperator)
+#bpy.utils.register_class(AC3D_OT_OkOperator)
+#bpy.utils.register_class(AC3D_OT_MessageOperator)
 
-class ExportAC3D(bpy.types.Operator, ExportHelper):
+class AC3D_OT_Export(bpy.types.Operator, ExportHelper):
 
 	'''Export to AC3D file format (.ac)'''
 	bl_idname = 'export_scene.export_ac3d'
@@ -347,17 +347,17 @@ class ExportAC3D(bpy.types.Operator, ExportHelper):
 			ex_rot = True
 		keywords["export_rot"] = ex_rot
 		t = time.mktime(datetime.datetime.now().timetuple())
-		export_ac3d.ExportAC3D(self, context, **keywords)
+		export_ac3d.AC3D_OT_Export(self, context, **keywords)
 		t = time.mktime(datetime.datetime.now().timetuple()) - t
 		print('Finished exporting in', t, 'seconds')
 
 		return {'FINISHED'}
 
 __classes__ = (
-    ExportAC3D,
-    ImportAC3D,
-    MessageOperator,
-    OkOperator,
+    AC3D_OT_Export,
+    AC3D_OT_Import,
+    AC3D_OT_MessageOperator,
+    AC3D_OT_OkOperator,
 )
 
 def register():

@@ -757,7 +757,7 @@ class ImportConf:
 		self.ac_name = os.path.split(filepath)[1]
 		TRACE("Importing {0}".format(self.ac_name))
 	
-class ImportAC3D:
+class AC3D_OT_Import:
 	def __init__(
 			self,
 			operator,

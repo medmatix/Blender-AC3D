@@ -81,7 +81,7 @@ class ExportConf:
 		self.ac_name = os.path.split(filepath)[1]
 		TRACE('Exporting to {0}'.format(self.ac_name))
 
-class ExportAC3D:
+class AC3D_OT_Export:
 	def __init__(
 			self,
 			operator,

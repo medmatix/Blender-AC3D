@@ -953,12 +953,9 @@ class AC3D_OT_Import:
         for bl_area in layout.areas:
             for bl_space in bl_area.spaces:
                 if bl_space.type == 'VIEW_3D':
-                    # bl_space.show_textured_solid = \
-                    #    self.import_config.display_textured_solid
                     bl_space.overlay.show_relationship_lines = False
-
-        layout.shading.light = 'MATCAP'
-        layout.shading.color_type = 'MATERIAL'
+                    bl_space.shading.light = 'MATCAP'
+                    bl_space.shading.color_type = 'MATERIAL'
 
         return None
 

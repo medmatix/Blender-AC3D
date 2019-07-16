@@ -954,8 +954,10 @@ class AC3D_OT_Import:
             for bl_space in bl_area.spaces:
                 if bl_space.type == 'VIEW_3D':
                     bl_space.overlay.show_relationship_lines = False
-                    bl_space.shading.light = 'MATCAP'
-                    bl_space.shading.color_type = 'MATERIAL'
+                    bl_space.shading.light = 'STUDIO'
+                    bl_space.shading.color_type = 'TEXTURE'
+                    bl_space.shading.background_type = 'THEME'
+                    bl_space.shading.studio_light = "outdoor.sl"
 
         return None
 

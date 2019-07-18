@@ -491,8 +491,15 @@ class AcObj:
                 self.name, object_data=lamp_data)
 
         # setup parent object
-        if self.ac_parent:
-            self.bl_obj.parent = self.ac_parent.bl_obj
+        if self.bl_obj:
+            if self.ac_parent and self.ac_parent.bl_obj:
+                self.bl_obj.parent = self.ac_parent.bl_obj
+            else:
+                parentName = self.import_config.parent_to
+                if parentName is not None and len(parentName) > 0:
+                    parent_obj = bpy.data.objects[parentName]
+                    if parent_obj is not None:
+                        self.bl_obj.parent = parent_obj
 
         # make sure we have something to work with
         if self.vert_list and me:
@@ -815,7 +822,8 @@ class ImportConf:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-    ):
+            parent_to):
+
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
         self.context = context
@@ -826,6 +834,7 @@ class ImportConf:
         self.use_amb_as_mircol = use_amb_as_mircol
         self.display_textured_solid = display_textured_solid
 #        self.hide_hidden_objects = hide_hidden_objects
+        self.parent_to = parent_to
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -845,7 +854,7 @@ class AC3D_OT_Import:
             use_emis_as_mircol=True,
             use_amb_as_mircol=False,
             display_textured_solid=False,
-    ):
+            parent_to=""):
 
         self.import_config = ImportConf(
             operator,
@@ -856,7 +865,7 @@ class AC3D_OT_Import:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-        )
+            parent_to)
 
         self.tokens = {
             'MATERIAL':		self.read_material,

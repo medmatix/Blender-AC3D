@@ -129,6 +129,9 @@ class AC3D_OT_Import(Operator, ImportHelper):
         ),
         default=False)
 
+    parent_to: StringProperty(
+        default="")
+
 #    hide_hidden_objects : BoolProperty(
 #        name="Hide hidden objects",
 #        description=(
@@ -355,15 +358,15 @@ __classes__ = (
 def register():
     for c in __classes__:
         bpy.utils.register_class(c)
-    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    TOPBAR_MT_file_export.append(menu_func_export)
+    TOPBAR_MT_file_import.append(menu_func_import)
 
 
 def unregister():
     for c in reversed(__classes__):
         bpy.utils.unregister_class(c)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    TOPBAR_MT_file_export.remove(menu_func_export)
+    TOPBAR_MT_file_import.remove(menu_func_import)
 
 
 if __name__ == "__main__":

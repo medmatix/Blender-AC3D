@@ -32,27 +32,21 @@ def TRACE(message):
     if DEBUG:
         print(message)
 
+
 # ------------------------------------------------------------------------------
-
-
 class Object:
     """
     Base class for an AC3D object.
     """
 
-    def __init__(	self,
-                  name,
-                  ob_type,
-                  bl_obj,
-                  export_config,
-                  local_transform):
+    def __init__(self, name, ob_type, bl_obj, export_config, local_transform):
         """
         Create a AC3D object from a blender object and it's children
 
-        @param name			The name of the object
-        @param ob_type	The type of the object (world, poly, group, light)
-        @param bl_obj	The according blender object
-        @param export_config	Settings for export TODO move to export method?
+        @param name             The name of the object
+        @param ob_type          The type of the object (world, poly, group, light)
+        @param bl_obj           The according blender object
+        @param export_config    Settings for export TODO move to export method?
         """
 
         self.export_config = export_config
@@ -79,8 +73,7 @@ class Object:
         self.children = []
         self.parent = None
 
-    def addChild(self,
-                 child):
+    def addChild(self, child):
         if not isinstance(child, Object):
             raise Exception(
                 'addChild: can only add children derived from Object')
@@ -164,10 +157,9 @@ class Object:
         for child in self.children:
             child.write(strm)
 
+
 # ------------------------------------------------------------------------------
-
-
-class World (Object):
+class World(Object):
     """
     Normally the root element is a world object
     """
@@ -179,32 +171,25 @@ class World (Object):
         Object.__init__(self, name, 'world', None,
                         export_config, local_transform)
 
+
 # ------------------------------------------------------------------------------
-
-
-class Poly (Object):
+class Poly(Object):
     """
     A polygon mesh
     """
 
-    def __init__(self,
-                 name,
-                 bl_obj,
-                 export_config,
-                 local_transform=Matrix()):
-        Object.__init__(self, name, 'poly', bl_obj,
+    def __init__(self, name, bl_obj, export_config, local_transform=Matrix()):
+        Object.__init__(self, name, "poly", bl_obj,
                         export_config, local_transform)
 
         self.crease = None
         self.vertices = []
         self.surfaces = []
-        self.tex_name = ''    # texture name (filename of texture)
+        self.tex_name = ''     # texture name (filename of texture)
         self.tex_rep = [1, 1]  # texture repeat
-        self.ac_mats = {}     # Blender to AC3d index cross-reference
-        self.ex_conf = export_config
+        self.ac_mats = {}      # Blender to AC3d index cross-reference
 
     def _parse(self, ac_mats, str_pre):
-
         if self.bl_obj:
             TRACE('{0}  ~ ({1}) {2}'.format(str_pre,
                                             self.bl_obj.type,
@@ -247,6 +232,7 @@ class Poly (Object):
         for bl_mat in mesh.materials:
             if not bl_mat:
                 continue
+
             ac_mat = Material(bl_mat.name, bl_mat, self.export_config)
 
             mat_exists = False
@@ -392,9 +378,11 @@ class Poly (Object):
             if mesh.uv_textures[uv_index] is not None:
                 uv_layer = mesh.uv_layers.active.data[:]
 
-        is_flipped = self.bl_obj.scale[0]\
-            * self.bl_obj.scale[1]\
-            * self.bl_obj.scale[2] < 0
+        is_flipped = (
+            self.bl_obj.scale[0] *
+            self.bl_obj.scale[1] *
+            self.bl_obj.scale[2] < 0
+        )
 
         for face_idx in range(len(mesh.polygons)):
             poly = mesh.polygons[face_idx]
@@ -552,38 +540,30 @@ class Poly (Object):
                 self.export_config.mat_offset = 0
 
         class SurfaceFlags:
-            def __init__(self,
-                         surf_type,
-                         is_smooth,
-                         is_twosided	):
+            def __init__(self, surf_type, is_smooth, is_twosided):
                 self.surf_type = surf_type
                 self.smooth_shaded = is_smooth
                 self.twosided = is_twosided
 
             def getFlags(self):
-                n = self.surf_type & 0x0f
+                n = self.surf_type & 0x0F
                 if self.smooth_shaded:
                     n = n | 0x10
                 if self.twosided:
                     n = n | 0x20
                 return n
 
+
 # ------------------------------------------------------------------------------
-
-
-class Group (Object):
+class Group(Object):
     """
     An object group
 
     TODO maybe add an option to prevent exporting empty groups
     """
 
-    def __init__(self,
-                 name,
-                 bl_obj,
-                 export_config,
-                 local_transform=Matrix()):
-        Object.__init__(self, name, 'group', bl_obj,
+    def __init__(self, name, bl_obj, export_config, local_transform=Matrix()):
+        Object.__init__(self, name, "group", bl_obj,
                         export_config, local_transform)
 
 # ------------------------------------------------------------------------------

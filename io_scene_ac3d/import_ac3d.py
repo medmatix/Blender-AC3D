@@ -491,8 +491,15 @@ class AcObj:
                 self.name, object_data=lamp_data)
 
         # setup parent object
-        if self.ac_parent:
-            self.bl_obj.parent = self.ac_parent.bl_obj
+        if self.bl_obj:
+            if self.ac_parent and self.ac_parent.bl_obj:
+                self.bl_obj.parent = self.ac_parent.bl_obj
+            else:
+                parentName = self.import_config.parent_to
+                if parentName is not None and len(parentName) > 0:
+                    parent_obj = bpy.data.objects[parentName]
+                    if parent_obj is not None:
+                        self.bl_obj.parent = parent_obj
 
         # make sure we have something to work with
         if self.vert_list and me:
@@ -500,6 +507,7 @@ class AcObj:
             me.auto_smooth_angle = radians(self.crease)
             two_sided_lighting = False
             has_uv = False
+
             for surf in self.surf_list:
                 surf_edges = surf.get_edges()
                 surf_face = surf.get_faces()
@@ -569,6 +577,7 @@ class AcObj:
                         # (if there is only 1) will be assigned to every edge
                         # in the object.
                         me.materials.append(bl_material)
+
             # print(len(self.vert_list))
             me.from_pydata(self.vert_list, self.edge_list, self.face_list)
 
@@ -611,50 +620,28 @@ class AcObj:
                     else:
                         edge.use_smooth = False
 
+            # ensure a UV layer exists
+            if me.uv_layers.active_index == -1:
+                if len(me.uv_layers) == 0:
+                    me.uv_layers.new(name="UVMap")
+                if me.uv_layers.active_index == -1:
+                    me.uv_layers[0].active = True
+
+            uv_layer = me.uv_layers[me.uv_layers.active_index]
+
+            me.update()
+
             # apply UV map
-            # if has_uv:
-            # 	uvtex = me.uv_textures.new()
-            # 	if uvtex:
-            # 		uvtexdata = me.uv_layers.active.data[:]
+            uv_layer_index = 0
+            for i, face in enumerate(self.face_list):
+                surf = self.surf_list[i]
 
-            # 		uv_pointer = 0
-            # 		for i, face in enumerate(self.face_list):
-            # 			surf = self.surf_face_list[i]
+                if len(self.tex_name) and len(surf.uv_refs) >= 3:
+                    for i_uv, uv in enumerate(surf.uv_refs):
+                        uv_layer.data[uv_layer_index].uv = uv
+                        uv_layer_index += 1
 
-            # 			if len(surf.uv_refs) >= 3:
-
-            # 				for vert_index in range(len(surf.uv_refs)):
-            # 					uvtexdata[uv_pointer+vert_index].uv = (
-            #                       [surf.uv_refs[vert_index][0] *
-            #                       self.texrep[0] + self.texoff[0],
-            #                       surf.uv_refs[vert_index][1] *
-            #                       self.texrep[1] + self.texoff[1]]
-            # 				if len(self.tex_name):
-            # 					# we do the check here to allow for import of
-            #                   # UV without texture
-            # 					surf_material = me.materials[self.face_mat_list[i]]
-
-            # 					uvtex.data[i].image = \
-            #                       surf_material.texture_slots[0].texture.image
-            # 				uv_pointer += len(surf.uv_refs)
-# uvtexdata does not contain data on lines, so lines cannot have UV, sadly
-# 					for i, edge in enumerate(self.line_list):
-# 						line = self.surf_line_list[i]
-
-# 						for vert_index in range(len(line.uv_refs)):
-# 							uvtexdata[uv_pointer+vert_index].uv = (
-#                               [line.uv_refs[vert_index][0] *
-#                               self.texrep[0] + self.texoff[0],
-#                               line.uv_refs[vert_index][1] *
-#                               self.texrep[1] + self.texoff[1]])
-# 						if len(self.tex_name):
-# 							# we do the check here to allow for import of UV without texture
-# 							line_material = me.materials[self.face_mat_list[i]]
-
-# 							uvtex.data[i].image = line_material.texture_slots[0].texture.image
-# 						uv_pointer += len(line.uv_refs)
-
-# 			me.show_double_sided = two_sided_lighting
+#           me.show_double_sided = two_sided_lighting
             self.bl_obj.show_transparent = True
 
             # apply subdivision modifier
@@ -835,7 +822,8 @@ class ImportConf:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-    ):
+            parent_to):
+
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
         self.context = context
@@ -846,6 +834,7 @@ class ImportConf:
         self.use_amb_as_mircol = use_amb_as_mircol
         self.display_textured_solid = display_textured_solid
 #        self.hide_hidden_objects = hide_hidden_objects
+        self.parent_to = parent_to
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -865,7 +854,7 @@ class AC3D_OT_Import:
             use_emis_as_mircol=True,
             use_amb_as_mircol=False,
             display_textured_solid=False,
-    ):
+            parent_to=""):
 
         self.import_config = ImportConf(
             operator,
@@ -876,7 +865,7 @@ class AC3D_OT_Import:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-        )
+            parent_to)
 
         self.tokens = {
             'MATERIAL':		self.read_material,
@@ -954,8 +943,11 @@ class AC3D_OT_Import:
             for bl_space in bl_area.spaces:
                 if bl_space.type == 'VIEW_3D':
                     bl_space.overlay.show_relationship_lines = False
-                    bl_space.shading.light = 'MATCAP'
-                    bl_space.shading.color_type = 'MATERIAL'
+                    bl_space.shading.light = 'STUDIO'
+                    bl_space.shading.color_type = 'TEXTURE'
+                    bl_space.shading.background_type = 'THEME'
+                    bl_space.shading.studio_light = "outdoor.sl"
+                    break
 
         return None
 

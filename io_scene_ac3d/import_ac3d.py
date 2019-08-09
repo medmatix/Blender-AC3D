@@ -472,7 +472,9 @@ class AcObj:
         me = None
         if self.type.lower() == 'group':
             # Create an empty object
-            self.bl_obj = bpy.data.objects.new(self.name, None)
+            bpy.ops.object.empty_add(type='PLAIN_AXES', radius=.01)
+            self.bl_obj = bpy.context.active_object
+            self.bl_obj.name = self.name
 
         if self.type.lower() == 'poly':
             meshname = self.name+".mesh"
@@ -672,8 +674,17 @@ class AcObj:
                 matrix_basis = self.import_config.global_matrix @ matrix_basis
                 self.bl_obj.matrix_basis = matrix_basis
 
-            self.import_config.context.scene.collection.objects.link(
-                self.bl_obj)
+            coll_name = self.import_config.collection_name
+            if not coll_name:
+                coll_name = "Collection"
+
+            scene_coll = self.import_config.context.scene.collection
+            container = scene_coll.children.get(coll_name)
+            if container is None:
+                container = bpy.data.collections.new(coll_name)
+                scene_coll.children.link(container)
+
+            container.objects.link(self.bl_obj)
             bpy.ops.object.select_all(action='DESELECT')
             self.bl_obj.select_set(True)
             # bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')
@@ -822,7 +833,8 @@ class ImportConf:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-            parent_to):
+            parent_to,
+            collection_name):
 
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
@@ -835,6 +847,7 @@ class ImportConf:
         self.display_textured_solid = display_textured_solid
 #        self.hide_hidden_objects = hide_hidden_objects
         self.parent_to = parent_to
+        self.collection_name = collection_name
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -854,7 +867,8 @@ class AC3D_OT_Import:
             use_emis_as_mircol=True,
             use_amb_as_mircol=False,
             display_textured_solid=False,
-            parent_to=""):
+            parent_to="",
+            collection_name=""):
 
         self.import_config = ImportConf(
             operator,
@@ -865,7 +879,8 @@ class AC3D_OT_Import:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-            parent_to)
+            parent_to,
+            collection_name)
 
         self.tokens = {
             'MATERIAL':		self.read_material,
@@ -919,15 +934,14 @@ class AC3D_OT_Import:
 
         if AC3D_ver == 'b':
             print("AC3D file is version 'b'")
+        elif AC3D_ver == 'c':
+            print("AC3D file is version 'c'")
         else:
-            if AC3D_ver == 'c':
-                print("AC3D file is version 'c'")
-            else:
-                operator.report(
-                    {'ERROR'},
-                    "Unsupported AC3D version: {0}".format(self.header))
-                ac_file.close()
-                return None
+            operator.report(
+                {'ERROR'},
+                "Unsupported AC3D version: {0}".format(self.header))
+            ac_file.close()
+            return None
 
         self.read_ac_file(ac_file)
 
@@ -976,6 +990,7 @@ class AC3D_OT_Import:
             self.readPrevious = False
             self.line_num = self.line_num + 1
             return self.lastline
+
     """
     Simplifies the reporting of errors to the user
     """

@@ -44,7 +44,8 @@ class Object:
         Create a AC3D object from a blender object and it's children
 
         @param name             The name of the object
-        @param ob_type          The type of the object (world, poly, group, light)
+        @param ob_type          The type of the object
+                                (world, poly, group, light)
         @param bl_obj           The according blender object
         @param export_config    Settings for export TODO move to export method?
         """

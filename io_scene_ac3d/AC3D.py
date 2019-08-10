@@ -35,13 +35,11 @@ def TRACE(message):
 
 # ------------------------------------------------------------------------------
 class Object:
-    """
-    Base class for an AC3D object.
-    """
+    """Base class for an AC3D object."""
 
     def __init__(self, name, ob_type, bl_obj, export_config, local_transform):
         """
-        Create a AC3D object from a blender object and it's children
+        Create a AC3D object from a blender object and it's children.
 
         @param name             The name of the object
         @param ob_type          The type of the object
@@ -49,7 +47,6 @@ class Object:
         @param bl_obj           The according blender object
         @param export_config    Settings for export TODO move to export method?
         """
-
         self.export_config = export_config
         self.name = name.replace('"', '')  # quotes not allowed...
         self.type = ob_type
@@ -82,10 +79,7 @@ class Object:
         self.children.append(child)
 
     def _parse(self, ac_mats, str_pre):
-        """
-        Override to process the blender mesh and add materials to ac_mats if
-        needed
-        """
+        """Override to process the mesh and add materials to ac_mats."""
         pass
 
     def parse(self, ac_mats, str_pre=''):
@@ -161,9 +155,7 @@ class Object:
 
 # ------------------------------------------------------------------------------
 class World(Object):
-    """
-    Normally the root element is a world object
-    """
+    """Normally the root element is a world object."""
 
     def __init__(self,
                  name,
@@ -175,9 +167,7 @@ class World(Object):
 
 # ------------------------------------------------------------------------------
 class Poly(Object):
-    """
-    A polygon mesh
-    """
+    """A polygon mesh."""
 
     def __init__(self, name, bl_obj, export_config, local_transform=Matrix()):
         Object.__init__(self, name, "poly", bl_obj,
@@ -226,8 +216,10 @@ class Poly(Object):
 
     def _parseMaterials(self, mesh, ac_mats):
         """
+        Material parser and global mapping.
+
         Extract the materials from a blender mesh and create an id mapping from
-        object material index to global AC3D material index
+        object material index to global AC3D material index.
         """
         mat_index = 0  # local material index
         for bl_mat in mesh.materials:
@@ -263,7 +255,7 @@ class Poly(Object):
                             print("Texture has no image data (skipping): "
                                   "Tex name=" + bl_tex.name +
                                   " Mat name=" + bl_mat.name)
-                            self.ex_conf.operator.report(
+                            self.export_config.operator.report(
                                 {'WARNING'},
                                 'AC3D Exporter: Texture "' + bl_tex.name +
                                 '" in material: "' + bl_mat.name + '" contains'
@@ -335,7 +327,7 @@ class Poly(Object):
                                 # TRACE('File already exists "{0}"- not '
                                 #   'overwriting!'.format(tex_name))
                         else:
-                            self.ex_conf.operator.report(
+                            self.export_config.operator.report(
                                 {'WARNING'},
                                 'AC3D Exporter: Texture "' + bl_tex.name +
                                 '" (' + tex_name + ')' + ' in material: "' +
@@ -359,9 +351,7 @@ class Poly(Object):
             mat_index = mat_index + 1
 
     def _parseVertices(self, mesh):
-        """
-        Extract the vertices from a blender mesh
-        """
+        """Extract the vertices from a blender mesh."""
         transform = Matrix().to_4x4()
         transform.identity()
         if not self.export_config.export_rot:
@@ -370,9 +360,7 @@ class Poly(Object):
         self.vertices = [transform @ v.co for v in mesh.vertices]
 
     def _parseFaces(self, mesh):
-        """
-        Extract the faces from a blender mesh
-        """
+        """Extract the faces from a blender mesh."""
         uv_layer = None
         if len(mesh.uv_textures):
             uv_index = mesh.uv_textures.active_index
@@ -412,7 +400,7 @@ class Poly(Object):
                                 uv_coords, 0)
             self.surfaces.append(surf)
 
-        if self.ex_conf.export_lines:
+        if self.export_config.export_lines:
             # Standalone edges without faces.
             #
             # notice that an edge_key is actually a pair of indices to vertices
@@ -558,7 +546,7 @@ class Poly(Object):
 # ------------------------------------------------------------------------------
 class Group(Object):
     """
-    An object group
+    An object group.
 
     TODO maybe add an option to prevent exporting empty groups
     """
@@ -571,10 +559,7 @@ class Group(Object):
 
 
 class Light (Object):
-    """
-    An light group
-
-    """
+    """An light group."""
 
     def __init__(self,
                  name,
@@ -592,9 +577,7 @@ class Light (Object):
 
 
 class Material:
-    """
-    Container class that defines the material properties of the .ac MATERIAL
-    """
+    """Container class that defines the material properties."""
 
     def __init__(self,
                  name='DefaultWhite',

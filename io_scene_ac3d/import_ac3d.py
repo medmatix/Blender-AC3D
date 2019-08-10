@@ -69,9 +69,7 @@ def TRACE(message):
 
 
 class AcMat:
-    """
-    Container class that defines the material properties of the .ac MATERIAL
-    """
+    """Container class that defines the material properties."""
 
     def __init__(self, name, rgb, amb, emis, spec, shi, trans, import_config):
         if name == "":
@@ -129,12 +127,13 @@ class AcMat:
         bl_mat.specular_color = self.spec
         bl_mat.specular_intensity = 1.0
 
-        acMin = 0.0
-        acMax = 128.0
-        blMin = 1.0
-        blMax = 511.0
-        acRange = (acMax - acMin)
-        blRange = (blMax - blMin)
+        # acMin = 0.0
+        # acMax = 128.0
+        # blMin = 1.0
+        # blMax = 511.0
+
+        # acRange = (acMax - acMin)
+        # blRange = (blMax - blMin)
         # bl_mat.specular_hardness = \
         #   int(round((((float(self.shi) - acMin) * blRange) / acRange) +
         #   blMin, 0)) not supported in 2.80
@@ -155,7 +154,8 @@ class AcMat:
 
     def get_blender_material(self, texrep, tex_name=''):
         bl_mat = None
-        tex_slot = None
+        # tex_slot = None
+
         if tex_name == '':
             bl_mat = self.bl_material
             if bl_mat is None:
@@ -191,8 +191,10 @@ class AcMat:
                 # tex_slot.texture.repeat_x = 1#texrep[0]
                 # tex_slot.texture.repeat_y = 1#texrep[1]
                 # tex_slot.blend_type = 'MULTIPLY'
+
                 self.bmat_keys[tex_name +
                                str(texrep[0])+'-'+str(texrep[1])] = bl_mat
+
         return bl_mat
 
     """
@@ -251,9 +253,7 @@ class AcMat:
 
 
 class AcObj:
-    """
-    Container class for a .ac OBJECT
-    """
+    """Container class for a .ac OBJECT."""
 
     def __init__(self, ob_type, ac_file, import_config, world, parent=None):
         self.type = ob_type			# Type of object
@@ -331,7 +331,7 @@ class AcObj:
 
     def read_vertices(self, ac_file, toks):
         vertex_count = int(toks[1])
-        for n in range(vertex_count):
+        for _n in range(vertex_count):
             line = self.world.readLine(ac_file)
             line = line.strip().split()
             if len(line) > 2:
@@ -343,7 +343,7 @@ class AcObj:
     def read_surfaces(self, ac_file, toks):
         surf_count = int(toks[1])
 
-        for n in range(surf_count):
+        for _n in range(surf_count):
             line = self.world.readLine(ac_file)
             if line is None:
                 break
@@ -435,7 +435,7 @@ class AcObj:
             # world rotation and location here, cause the global_matrix is
             # applied when making the children of world/scene.
             self4 = self.rotation.to_4x4()
-            self3 = mathutils.Matrix.Translation(self.location)
+            # self3 = mathutils.Matrix.Translation(self.location)
             self.import_config.global_matrix = \
                 self4 @ self.import_config.global_matrix
             self.import_config.global_matrix[0][3] = self.location[0]
@@ -443,7 +443,7 @@ class AcObj:
             self.import_config.global_matrix[2][3] = self.location[2]
 
         num_kids = int(toks[1])
-        for n in range(num_kids):
+        for _n in range(num_kids):
             line = self.world.readLine(ac_file)
             if line is None:
                 break
@@ -620,12 +620,12 @@ class AcObj:
                         if b_edge.key == f_edge:
                             freeEdges.add(b_edge)
 
-                for no, edge in enumerate(freeEdges):
-                    edge.material_index = self.line_mat_list[no]
-                    if self.surf_line_list[no].flags.shaded is True:
-                        edge.use_smooth = True
-                    else:
-                        edge.use_smooth = False
+                # for no, edge in enumerate(freeEdges):
+                #    edge.material_index = self.line_mat_list[no]
+                #    if self.surf_line_list[no].flags.shaded is True:
+                #        edge.use_smooth = True
+                #    else:
+                #        edge.use_smooth = False
 
             # ensure a UV layer exists
             if me.uv_layers.active_index == -1:
@@ -640,11 +640,11 @@ class AcObj:
 
             # apply UV map
             uv_layer_index = 0
-            for i, face in enumerate(self.face_list):
+            for i, _face in enumerate(self.face_list):
                 surf = self.surf_list[i]
 
                 if len(self.tex_name) and len(surf.uv_refs) >= 3:
-                    for i_uv, uv in enumerate(surf.uv_refs):
+                    for _i_uv, uv in enumerate(surf.uv_refs):
                         uv_layer.data[uv_layer_index].uv = uv
                         uv_layer_index += 1
 
@@ -790,7 +790,7 @@ class AcSurf:
 
     def read_surf_refs(self, ac_file, tokens):
         num_refs = int(tokens[1])
-        for n in range(num_refs):
+        for _n in range(num_refs):
             line = self.world.readLine(ac_file)
             line = line.strip().split()
 
@@ -1034,7 +1034,7 @@ class AC3D_OT_Import:
                                                                  ln=line))
                 else:
                     condition = False
-        except Error(e):
+        except Exception as e:
             self.report_error('AC3D import error, line %d: %s' %
                               (self.line_num, e))
 

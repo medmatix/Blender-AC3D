@@ -495,7 +495,7 @@ class AcObj:
             lamp_data.energy = 200
 
             self.bl_obj = bpy.data.objects.new(name=self.name,
-                object_data=lamp_data)
+                                               object_data=lamp_data)
 
         # setup parent object
         if self.bl_obj:
@@ -653,13 +653,16 @@ class AcObj:
 
             # apply subdivision modifier
             if self.subdiv != 0:
-                subName = self.name+".subdiv"
-                self.bl_obj.modifiers.new(subName, type='SUBSURF')
-                self.bl_obj.modifiers[subName].levels = self.subdiv
-                self.bl_obj.modifiers[subName].render_levels = self.subdiv
-                self.bl_obj.modifiers[subName].subdivision_type = \
-                    'CATMULL_CLARK'
-                self.bl_obj.modifiers[subName].use_subsurf_uv = True
+                subName = self.name + ".subdiv"
+                self.bl_obj.modifiers.new(name=subName, type='SUBSURF')
+
+                modifier = self.bl_obj.modifiers[subName]
+                modifier.levels = self.subdiv
+                modifier.render_levels = self.subdiv
+
+                # The below are default settings... uncomment to modify
+                # modifier.subdivision_type = 'CATMULL_CLARK'
+                # modifier.uv_smooth = 'NONE'
 
         if self.bl_obj:
             self3 = mathutils.Matrix.Translation(self.location)

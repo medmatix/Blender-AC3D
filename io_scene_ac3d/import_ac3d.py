@@ -692,7 +692,9 @@ class AcObj:
                 container = bpy.data.collections.new(coll_name)
                 scene_coll.children.link(container)
 
-            container.objects.link(self.bl_obj)
+            if not container.objects.get(self.bl_obj.name):
+                container.objects.link(self.bl_obj)
+
             bpy.ops.object.select_all(action='DESELECT')
             self.bl_obj.select_set(True)
             # bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')

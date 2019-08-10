@@ -944,7 +944,6 @@ class AC3D_OT_Import:
             return None
 
         self.read_ac_file(ac_file)
-
         ac_file.close()
 
         self.create_blender_data()
@@ -970,26 +969,29 @@ class AC3D_OT_Import:
     """
 
     def readLine(self, ac_file):
-        if self.readPrevious is False:
-            condition = True
-            while condition:
-                # keep reading lines until we encounter a non-empty line
-                line = ac_file.readline()
-                if not line:
-                    # end of file
-                    return None
-                line = line.rstrip("\n")
-                if line.strip != '' and len(line.split()) > 0:
-                    condition = False
-                    self.lastline = line
-                    # print("lastline="+self.lastline)
-                self.line_num = self.line_num + 1
-            return line
-        else:
-            # print("Reading "+str(len(self.lastline))+" prev:"+self.lastline)
+        if self.readPrevious:
+            # print("Reading ", len(self.lastline), "prev:", self.lastline)
             self.readPrevious = False
-            self.line_num = self.line_num + 1
             return self.lastline
+
+        while True:
+            # keep reading lines until we encounter a non-empty line
+            line = ac_file.readline()
+            self.line_num += 1
+
+            if not line:
+                # EOF, since there is no '\n'
+                return None
+
+            line = line.rstrip("\n").strip()
+            if not line:
+                # blank line, skip and read another line
+                continue
+
+            self.lastline = line
+            # print("lastline=", self.lastline)
+
+            return line
 
     """
     Simplifies the reporting of errors to the user

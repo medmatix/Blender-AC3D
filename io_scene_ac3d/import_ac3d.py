@@ -60,7 +60,7 @@ TODO: Add setting so that .AC file is brought in relative to the 3D cursor
 
 """
 
-DEBUG = True
+DEBUG = False
 
 
 def TRACE(message):
@@ -466,31 +466,36 @@ class AcObj:
 
     def create_blender_object(self, ac_matlist, str_pre,
                               bLevelLinked, mainSelf):
-        if self.type.lower() == 'world':
+        me = None
+        type_name = self.type.lower()
+
+        if type_name == 'world':
             self.name = self.import_config.ac_name
 
-        me = None
-        if self.type.lower() == 'group':
+        elif type_name == 'group':
             # Create an empty object
             bpy.ops.object.empty_add(type='PLAIN_AXES', radius=.01)
             self.bl_obj = bpy.context.active_object
             self.bl_obj.name = self.name
 
-        if self.type.lower() == 'poly':
-            meshname = self.name+".mesh"
+        elif type_name == 'poly':
+            meshname = self.name + ".mesh"
             if len(self.data) > 0:
                 meshname = self.data
             me = bpy.data.meshes.new(meshname)
             self.bl_obj = bpy.data.objects.new(self.name, me)
 
-        if self.type.lower() == 'light':
+        elif type_name == 'light':
             # Create an light object
-            lampname = self.name+".lamp"
+            lampname = self.name + ".lamp"
             if len(self.data) > 0:
                 lampname = self.data
-            lamp_data = bpy.data.lamps.new(name=lampname, type='POINT')
-            self.bl_obj = bpy.data.objects.new(
-                self.name, object_data=lamp_data)
+
+            lamp_data = bpy.data.lights.new(name=lampname, type='POINT')
+            lamp_data.energy = 200
+
+            self.bl_obj = bpy.data.objects.new(name=self.name,
+                object_data=lamp_data)
 
         # setup parent object
         if self.bl_obj:
@@ -547,7 +552,7 @@ class AcObj:
                         fm_index = 0
                         if bl_material.name not in me.materials:
                             me.materials.append(bl_material)
-                            fm_index = len(me.materials)-1
+                            fm_index = len(me.materials) - 1
                         else:
                             for mat in me.materials:
                                 if mat == bl_material:

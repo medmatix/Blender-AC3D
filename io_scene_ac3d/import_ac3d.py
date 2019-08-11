@@ -60,7 +60,7 @@ TODO: Add setting so that .AC file is brought in relative to the 3D cursor
 
 """
 
-DEBUG = True
+DEBUG = False
 
 
 def TRACE(message):
@@ -69,9 +69,7 @@ def TRACE(message):
 
 
 class AcMat:
-    """
-    Container class that defines the material properties of the .ac MATERIAL
-    """
+    """Container class that defines the material properties."""
 
     def __init__(self, name, rgb, amb, emis, spec, shi, trans, import_config):
         if name == "":
@@ -129,12 +127,13 @@ class AcMat:
         bl_mat.specular_color = self.spec
         bl_mat.specular_intensity = 1.0
 
-        acMin = 0.0
-        acMax = 128.0
-        blMin = 1.0
-        blMax = 511.0
-        acRange = (acMax - acMin)
-        blRange = (blMax - blMin)
+        # acMin = 0.0
+        # acMax = 128.0
+        # blMin = 1.0
+        # blMax = 511.0
+
+        # acRange = (acMax - acMin)
+        # blRange = (blMax - blMin)
         # bl_mat.specular_hardness = \
         #   int(round((((float(self.shi) - acMin) * blRange) / acRange) +
         #   blMin, 0)) not supported in 2.80
@@ -155,7 +154,8 @@ class AcMat:
 
     def get_blender_material(self, texrep, tex_name=''):
         bl_mat = None
-        tex_slot = None
+        # tex_slot = None
+
         if tex_name == '':
             bl_mat = self.bl_material
             if bl_mat is None:
@@ -191,8 +191,10 @@ class AcMat:
                 # tex_slot.texture.repeat_x = 1#texrep[0]
                 # tex_slot.texture.repeat_y = 1#texrep[1]
                 # tex_slot.blend_type = 'MULTIPLY'
+
                 self.bmat_keys[tex_name +
                                str(texrep[0])+'-'+str(texrep[1])] = bl_mat
+
         return bl_mat
 
     """
@@ -251,9 +253,7 @@ class AcMat:
 
 
 class AcObj:
-    """
-    Container class for a .ac OBJECT
-    """
+    """Container class for a .ac OBJECT."""
 
     def __init__(self, ob_type, ac_file, import_config, world, parent=None):
         self.type = ob_type			# Type of object
@@ -331,7 +331,7 @@ class AcObj:
 
     def read_vertices(self, ac_file, toks):
         vertex_count = int(toks[1])
-        for n in range(vertex_count):
+        for _n in range(vertex_count):
             line = self.world.readLine(ac_file)
             line = line.strip().split()
             if len(line) > 2:
@@ -343,7 +343,7 @@ class AcObj:
     def read_surfaces(self, ac_file, toks):
         surf_count = int(toks[1])
 
-        for n in range(surf_count):
+        for _n in range(surf_count):
             line = self.world.readLine(ac_file)
             if line is None:
                 break
@@ -435,7 +435,7 @@ class AcObj:
             # world rotation and location here, cause the global_matrix is
             # applied when making the children of world/scene.
             self4 = self.rotation.to_4x4()
-            self3 = mathutils.Matrix.Translation(self.location)
+            # self3 = mathutils.Matrix.Translation(self.location)
             self.import_config.global_matrix = \
                 self4 @ self.import_config.global_matrix
             self.import_config.global_matrix[0][3] = self.location[0]
@@ -443,7 +443,7 @@ class AcObj:
             self.import_config.global_matrix[2][3] = self.location[2]
 
         num_kids = int(toks[1])
-        for n in range(num_kids):
+        for _n in range(num_kids):
             line = self.world.readLine(ac_file)
             if line is None:
                 break
@@ -466,29 +466,36 @@ class AcObj:
 
     def create_blender_object(self, ac_matlist, str_pre,
                               bLevelLinked, mainSelf):
-        if self.type.lower() == 'world':
+        me = None
+        type_name = self.type.lower()
+
+        if type_name == 'world':
             self.name = self.import_config.ac_name
 
-        me = None
-        if self.type.lower() == 'group':
+        elif type_name == 'group':
             # Create an empty object
-            self.bl_obj = bpy.data.objects.new(self.name, None)
+            bpy.ops.object.empty_add(type='PLAIN_AXES', radius=.01)
+            self.bl_obj = bpy.context.active_object
+            self.bl_obj.name = self.name
 
-        if self.type.lower() == 'poly':
-            meshname = self.name+".mesh"
+        elif type_name == 'poly':
+            meshname = self.name + ".mesh"
             if len(self.data) > 0:
                 meshname = self.data
             me = bpy.data.meshes.new(meshname)
             self.bl_obj = bpy.data.objects.new(self.name, me)
 
-        if self.type.lower() == 'light':
+        elif type_name == 'light':
             # Create an light object
-            lampname = self.name+".lamp"
+            lampname = self.name + ".lamp"
             if len(self.data) > 0:
                 lampname = self.data
-            lamp_data = bpy.data.lamps.new(name=lampname, type='POINT')
-            self.bl_obj = bpy.data.objects.new(
-                self.name, object_data=lamp_data)
+
+            lamp_data = bpy.data.lights.new(name=lampname, type='POINT')
+            lamp_data.energy = 200
+
+            self.bl_obj = bpy.data.objects.new(name=self.name,
+                                               object_data=lamp_data)
 
         # setup parent object
         if self.bl_obj:
@@ -545,7 +552,7 @@ class AcObj:
                         fm_index = 0
                         if bl_material.name not in me.materials:
                             me.materials.append(bl_material)
-                            fm_index = len(me.materials)-1
+                            fm_index = len(me.materials) - 1
                         else:
                             for mat in me.materials:
                                 if mat == bl_material:
@@ -613,12 +620,12 @@ class AcObj:
                         if b_edge.key == f_edge:
                             freeEdges.add(b_edge)
 
-                for no, edge in enumerate(freeEdges):
-                    edge.material_index = self.line_mat_list[no]
-                    if self.surf_line_list[no].flags.shaded is True:
-                        edge.use_smooth = True
-                    else:
-                        edge.use_smooth = False
+                # for no, edge in enumerate(freeEdges):
+                #    edge.material_index = self.line_mat_list[no]
+                #    if self.surf_line_list[no].flags.shaded is True:
+                #        edge.use_smooth = True
+                #    else:
+                #        edge.use_smooth = False
 
             # ensure a UV layer exists
             if me.uv_layers.active_index == -1:
@@ -633,11 +640,11 @@ class AcObj:
 
             # apply UV map
             uv_layer_index = 0
-            for i, face in enumerate(self.face_list):
+            for i, _face in enumerate(self.face_list):
                 surf = self.surf_list[i]
 
                 if len(self.tex_name) and len(surf.uv_refs) >= 3:
-                    for i_uv, uv in enumerate(surf.uv_refs):
+                    for _i_uv, uv in enumerate(surf.uv_refs):
                         uv_layer.data[uv_layer_index].uv = uv
                         uv_layer_index += 1
 
@@ -646,13 +653,16 @@ class AcObj:
 
             # apply subdivision modifier
             if self.subdiv != 0:
-                subName = self.name+".subdiv"
-                self.bl_obj.modifiers.new(subName, type='SUBSURF')
-                self.bl_obj.modifiers[subName].levels = self.subdiv
-                self.bl_obj.modifiers[subName].render_levels = self.subdiv
-                self.bl_obj.modifiers[subName].subdivision_type = \
-                    'CATMULL_CLARK'
-                self.bl_obj.modifiers[subName].use_subsurf_uv = True
+                subName = self.name + ".subdiv"
+                self.bl_obj.modifiers.new(name=subName, type='SUBSURF')
+
+                modifier = self.bl_obj.modifiers[subName]
+                modifier.levels = self.subdiv
+                modifier.render_levels = self.subdiv
+
+                # The below are default settings... uncomment to modify
+                # modifier.subdivision_type = 'CATMULL_CLARK'
+                # modifier.uv_smooth = 'NONE'
 
         if self.bl_obj:
             self3 = mathutils.Matrix.Translation(self.location)
@@ -672,8 +682,19 @@ class AcObj:
                 matrix_basis = self.import_config.global_matrix @ matrix_basis
                 self.bl_obj.matrix_basis = matrix_basis
 
-            self.import_config.context.scene.collection.objects.link(
-                self.bl_obj)
+            coll_name = self.import_config.collection_name
+            if not coll_name:
+                coll_name = "Collection"
+
+            scene_coll = self.import_config.context.scene.collection
+            container = scene_coll.children.get(coll_name)
+            if container is None:
+                container = bpy.data.collections.new(coll_name)
+                scene_coll.children.link(container)
+
+            if not container.objects.get(self.bl_obj.name):
+                container.objects.link(self.bl_obj)
+
             bpy.ops.object.select_all(action='DESELECT')
             self.bl_obj.select_set(True)
             # bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')
@@ -769,7 +790,7 @@ class AcSurf:
 
     def read_surf_refs(self, ac_file, tokens):
         num_refs = int(tokens[1])
-        for n in range(num_refs):
+        for _n in range(num_refs):
             line = self.world.readLine(ac_file)
             line = line.strip().split()
 
@@ -822,7 +843,8 @@ class ImportConf:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-            parent_to):
+            parent_to,
+            collection_name):
 
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
@@ -835,6 +857,7 @@ class ImportConf:
         self.display_textured_solid = display_textured_solid
 #        self.hide_hidden_objects = hide_hidden_objects
         self.parent_to = parent_to
+        self.collection_name = collection_name
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -854,7 +877,8 @@ class AC3D_OT_Import:
             use_emis_as_mircol=True,
             use_amb_as_mircol=False,
             display_textured_solid=False,
-            parent_to=""):
+            parent_to="",
+            collection_name=""):
 
         self.import_config = ImportConf(
             operator,
@@ -865,7 +889,8 @@ class AC3D_OT_Import:
             use_emis_as_mircol,
             use_amb_as_mircol,
             display_textured_solid,
-            parent_to)
+            parent_to,
+            collection_name)
 
         self.tokens = {
             'MATERIAL':		self.read_material,
@@ -919,18 +944,16 @@ class AC3D_OT_Import:
 
         if AC3D_ver == 'b':
             print("AC3D file is version 'b'")
+        elif AC3D_ver == 'c':
+            print("AC3D file is version 'c'")
         else:
-            if AC3D_ver == 'c':
-                print("AC3D file is version 'c'")
-            else:
-                operator.report(
-                    {'ERROR'},
-                    "Unsupported AC3D version: {0}".format(self.header))
-                ac_file.close()
-                return None
+            operator.report(
+                {'ERROR'},
+                "Unsupported AC3D version: {0}".format(self.header))
+            ac_file.close()
+            return None
 
         self.read_ac_file(ac_file)
-
         ac_file.close()
 
         self.create_blender_data()
@@ -956,26 +979,30 @@ class AC3D_OT_Import:
     """
 
     def readLine(self, ac_file):
-        if self.readPrevious is False:
-            condition = True
-            while condition:
-                # keep reading lines until we encounter a non-empty line
-                line = ac_file.readline()
-                if not line:
-                    # end of file
-                    return None
-                line = line.rstrip("\n")
-                if line.strip != '' and len(line.split()) > 0:
-                    condition = False
-                    self.lastline = line
-                    # print("lastline="+self.lastline)
-                self.line_num = self.line_num + 1
-            return line
-        else:
-            # print("Reading "+str(len(self.lastline))+" prev:"+self.lastline)
+        if self.readPrevious:
+            # print("Reading ", len(self.lastline), "prev:", self.lastline)
             self.readPrevious = False
-            self.line_num = self.line_num + 1
             return self.lastline
+
+        while True:
+            # keep reading lines until we encounter a non-empty line
+            line = ac_file.readline()
+            self.line_num += 1
+
+            if not line:
+                # EOF, since there is no '\n'
+                return None
+
+            line = line.rstrip("\n").strip()
+            if not line:
+                # blank line, skip and read another line
+                continue
+
+            self.lastline = line
+            # print("lastline=", self.lastline)
+
+            return line
+
     """
     Simplifies the reporting of errors to the user
     """
@@ -1007,7 +1034,7 @@ class AC3D_OT_Import:
                                                                  ln=line))
                 else:
                     condition = False
-        except Error(e):
+        except Exception as e:
             self.report_error('AC3D import error, line %d: %s' %
                               (self.line_num, e))
 

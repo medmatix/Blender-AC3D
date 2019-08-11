@@ -22,15 +22,16 @@
 # folders of the standard 2.59 blender package and customised to
 # act as a wrapper for the conventional AC3D importer/exporter
 
-import mathutils
 import time
 import datetime
 from math import radians
 
 import bpy
 from bpy.types import Operator, TOPBAR_MT_file_import, TOPBAR_MT_file_export
-from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, \
+    FloatVectorProperty, StringProperty
 from bpy_extras.io_utils import ImportHelper, ExportHelper, axis_conversion
+from mathutils import Euler
 
 bl_info = {
     "name": "AC3D (.ac) format",
@@ -38,13 +39,13 @@ bl_info = {
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr.",
     "version": (3, 00),
     "blender": (2, 80, 0),
+    "category": "Import-Export",
     "location": "File > Import-Export",
     "warning": "",
     "wiki_url": (
         "http://wiki.flightgear.org/Blender_AC3D_import_and_export"
         "#Majic79_addon"),
-    "tracker_url": "https://github.com/NikolaiVChr/Blender-AC3D/issues",
-    "category": "Import-Export"
+    "tracker_url": "https://github.com/NikolaiVChr/Blender-AC3D/issues"
 }
 
 # To support reload properly, try to access a package var, if it's there,
@@ -72,6 +73,7 @@ class AC3D_OT_Import(Operator, ImportHelper):
     bl_options = {'PRESET'}
 
     filename_ext = '.ac'
+
     filter_glob: StringProperty(
         default='*.ac',
         options={'HIDDEN'})
@@ -84,8 +86,7 @@ class AC3D_OT_Import(Operator, ImportHelper):
             ('Z', "Z Forward", ""),
             ('-X', "-X Forward", ""),
             ('-Y', "-Y Forward", ""),
-            ('-Z', "-Z Forward", ""),
-        ),
+            ('-Z', "-Z Forward", "")),
         default='-Z')
 
     axis_up: EnumProperty(
@@ -96,9 +97,8 @@ class AC3D_OT_Import(Operator, ImportHelper):
             ('Z', "Z Up", ""),
             ('-X', "-X Up", ""),
             ('-Y', "-Y Up", ""),
-            ('-Z', "-Z Up", ""),
-        ),
-        default='Y',)
+            ('-Z', "-Z Up", "")),
+        default='Y')
 
     transparency_method: EnumProperty(
         name="Transparency Method",
@@ -106,8 +106,7 @@ class AC3D_OT_Import(Operator, ImportHelper):
         items=(
             ('MASK', "Mask", ""),
             ('Z_TRANSPARENCY', "Z Transparency", ""),
-            ('RAYTRACE', "RayTrace", ""),
-        ),
+            ('RAYTRACE', "RayTrace", "")),
         default='Z_TRANSPARENCY')
 
     use_emis_as_mircol: BoolProperty(
@@ -125,11 +124,25 @@ class AC3D_OT_Import(Operator, ImportHelper):
         description=(
             "Show textures applied when in Solid view (notice that "
             "transparency for materials is then only seen in Material "
-            "view and Render view)"
-        ),
+            "view and Render view)"),
         default=False)
 
+    rotation: FloatVectorProperty(
+        description="Import Rotation",
+        subtype="XYZ",
+        unit="ROTATION",
+        default=(0.0, 0.0, 0.0))
+
+    translation: FloatVectorProperty(
+        description="Import Location",
+        subtype="TRANSLATION",
+        unit="NONE",
+        default=(0.0, 0.0, 0.0))
+
     parent_to: StringProperty(
+        default="")
+
+    collection_name: StringProperty(
         default="")
 
 #    hide_hidden_objects : BoolProperty(
@@ -145,27 +158,36 @@ class AC3D_OT_Import(Operator, ImportHelper):
         from . import import_ac3d
         keywords = self.as_keywords(ignore=("axis_forward",
                                             "axis_up",
-                                            "filter_glob"))
+                                            "filter_glob",
+                                            "rotation",
+                                            "translation"))
 
-        global_matrix = axis_conversion(from_forward=self.axis_forward,
-                                        from_up=self.axis_up).to_4x4()
+        eul = Euler((radians(self.rotation[0]),
+                     radians(self.rotation[1]),
+                     radians(self.rotation[2])), 'XYZ')
+
+        global_matrix = eul.to_matrix().to_4x4() @ \
+            axis_conversion(from_forward=self.axis_forward,
+                            from_up=self.axis_up).to_4x4()
 
         keywords["global_matrix"] = global_matrix
 
         t = time.mktime(datetime.datetime.now().timetuple())
+
         import_ac3d.AC3D_OT_Import(self, context, **keywords)
+
         t = time.mktime(datetime.datetime.now().timetuple()) - t
         print('Finished importing in', t, 'seconds')
 
         return {'FINISHED'}
+
 
 #
 #   The error message operator. When invoked, pops up a dialog
 #   window with the given message.
 #
 
-
-class AC3D_OT_MessageOperator(bpy.types.Operator):
+class AC3D_OT_Message(Operator):
     bl_idname = "error.message"
     bl_label = "Message"
     type: StringProperty()
@@ -189,12 +211,12 @@ class AC3D_OT_MessageOperator(bpy.types.Operator):
         row.label("")
         row.operator("error.ok")
 
+
 #
 #   The OK button in the error dialog
 #
 
-
-class AC3D_OT_OkOperator(bpy.types.Operator):
+class AC3D_OT_Ok(Operator):
     bl_idname = "error.ok"
     bl_label = "OK"
 
@@ -223,9 +245,8 @@ class AC3D_OT_Export(Operator, ExportHelper):
                ('Z', "Z Forward", ""),
                ('-X', "-X Forward", ""),
                ('-Y', "-Y Forward", ""),
-               ('-Z', "-Z Forward", ""),
-               ),
-        default='-Z',
+               ('-Z', "-Z Forward", "")),
+        default='-Z'
     )
 
     axis_up: EnumProperty(
@@ -235,10 +256,10 @@ class AC3D_OT_Export(Operator, ExportHelper):
                ('Z', "Z Up", ""),
                ('-X', "-X Up", ""),
                ('-Y', "-Y Up", ""),
-               ('-Z', "-Z Up", ""),
-               ),
-        default='Y',
+               ('-Z', "-Z Up", "")),
+        default='Y'
     )
+
     export_rots: EnumProperty(
         name="Matrices",
         description=(
@@ -350,9 +371,8 @@ class AC3D_OT_Export(Operator, ExportHelper):
 __classes__ = (
     AC3D_OT_Export,
     AC3D_OT_Import,
-    AC3D_OT_MessageOperator,
-    AC3D_OT_OkOperator,
-)
+    AC3D_OT_Message,
+    AC3D_OT_Ok)
 
 
 def register():

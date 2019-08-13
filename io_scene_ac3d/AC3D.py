@@ -189,8 +189,8 @@ class Poly(Object):
             self._parseMesh(ac_mats)
 
     def _parseMesh(self, ac_mats):
-        mesh = self.bl_obj.to_mesh(
-            self.export_config.context.scene, True, 'PREVIEW')
+        depsgraph = self.export_config.context.evaluated_depsgraph_get()
+        mesh = self.bl_obj.to_mesh(preserve_all_data_layers=True,depsgraph=depsgraph)#2.79 was: self.export_config.context.scene, True, 'PREVIEW'
         orig_mesh = self.bl_obj.data
         if (orig_mesh):
             if (orig_mesh.name):
@@ -239,8 +239,11 @@ class Poly(Object):
                 ac_mats.append(ac_mat)
 
             if not len(self.tex_name):
-                for tex_slot in bl_mat.texture_slots:
-                    if tex_slot:
+                if bl_mat.node_tree:
+                    textures = []
+                    textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_SLOT'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
+                    print(textures)
+                    for tex_slot in textures:
                         old_tc = tex_slot.texture_coords
                         if tex_slot.texture_coords != 'UV':
                             tex_slot.texture_coords = 'UV'
@@ -261,8 +264,12 @@ class Poly(Object):
                                 '" in material: "' + bl_mat.name + '" contains'
                                 ' no image data and was not exported.')
                             continue
-
-                        tex_name = bpy.path.basename(bl_im.filepath)
+                            
+                        #2.80 these 2 lines:
+                        bpy.path.abspath(bl_tex.filepath, library=tex.library)
+                        norm_path = os.path.normpath(full_path)
+                        
+                        tex_name = bpy.path.basename(norm_path)
                         export_tex = os.path.join(
                             self.export_config.exportdir, tex_name)
 
@@ -362,10 +369,12 @@ class Poly(Object):
     def _parseFaces(self, mesh):
         """Extract the faces from a blender mesh."""
         uv_layer = None
-        if len(mesh.uv_textures):
-            uv_index = mesh.uv_textures.active_index
-            if mesh.uv_textures[uv_index] is not None:
-                uv_layer = mesh.uv_layers.active.data[:]
+        if len(mesh.uv_layers):
+            uv_layers = mesh.uv_layers
+            for uv_l in uv_layers:
+                if uv_l.active:
+                    # select the first active layer
+                    uv_layer = uv_l
 
         is_flipped = (
             self.bl_obj.scale[0] *
@@ -385,8 +394,8 @@ class Poly(Object):
                     #   mesh.loops[loop_index].vertex_index)
                     # print("    UV: %r" %
                     #   uv_layer[loop_index].uv)
-                    uv_coords.append(uv_layer[loop_index].uv)
-                    if(not uv_layer[loop_index].uv):
+                    uv_coords.append(uv_layer.data[loop_index].uv)
+                    if(not uv_layer.data[loop_index].uv):
                         no_uv = True
 
             else:
@@ -396,7 +405,7 @@ class Poly(Object):
                 uv_coords = None
 
             surf = self.Surface(self.export_config, poly, self.ac_mats,
-                                mesh.show_double_sided, is_flipped,
+                                True, is_flipped,# this True should maybe be a export option as show_double_sided is no longer supported in Blender 2.80
                                 uv_coords, 0)
             self.surfaces.append(surf)
 
@@ -619,36 +628,43 @@ class Material:
             self.default = False
             # remove any " from the name.
             self.name = re.sub('["]', '', bl_mat.name)
-            self.rgb = bl_mat.diffuse_intensity * bl_mat.diffuse_color
-            if export_config.mircol_as_amb:
-                self.amb = bl_mat.mirror_color
-            elif export_config.amb_as_diff:
-                self.amb = self.rgb
-            else:
-                self.amb = [bl_mat.ambient, bl_mat.ambient, bl_mat.ambient]
-            if export_config.mircol_as_emis:
+            self.rgb = bl_mat.diffuse_color  #2.79 was bl_mat.diffuse_intensity * bl_mat.diffuse_color
+            
+            #2.80: Just output some common values for now: (TODO!)
+            self.amb = [0.8,0.8,0.8]
+            self.emis = [0,0,0]
+            self.shi = 64
+            self.trans = 0
+            
+#            if export_config.mircol_as_amb:
+#                self.amb = bl_mat.mirror_color
+#            elif export_config.amb_as_diff:
+#                self.amb = self.rgb
+#            else:
+#                self.amb = [bl_mat.ambient, bl_mat.ambient, bl_mat.ambient]
+#            if export_config.mircol_as_emis:
                 # * bl_mat.emit   confusing if enabled, should be either
                 # mirror color or greyscale emissive
-                self.emis = bl_mat.mirror_color
-            else:
-                self.emis = [bl_mat.emit/2, bl_mat.emit/2, bl_mat.emit/2]
+#                self.emis = bl_mat.mirror_color
+#            else:
+#                self.emis = [bl_mat.emit/2, bl_mat.emit/2, bl_mat.emit/2]
             self.spec = bl_mat.specular_intensity * bl_mat.specular_color
             self.merge = export_config.merge_materials
 
-            acMin = 0.0
-            acMax = 128.0
-            blMin = 1.0
-            blMax = 511.0
-            acRange = (acMax - acMin)
-            blRange = (blMax - blMin)
-            self.shi = int(round(
-                (((float(bl_mat.specular_hardness) - blMin) * acRange) /
-                 blRange) + acMin, 0))
+#            acMin = 0.0
+#            acMax = 128.0
+#            blMin = 1.0
+#            blMax = 511.0
+#            acRange = (acMax - acMin)
+#            blRange = (blMax - blMin)
+#            self.shi = int(round(
+#                (((float(bl_mat.specular_hardness) - blMin) * acRange) /
+#                 blRange) + acMin, 0))
 
-            if bl_mat.use_transparency:
-                self.trans = 1.0 - bl_mat.alpha
-            else:
-                self.trans = 0.0
+#            if bl_mat.use_transparency:
+#                self.trans = 1.0 - bl_mat.alpha
+#            else:
+#                self.trans = 0.0
 
     def write(self, strm):
         # MATERIAL %s rgb  %f %f %f  amb   %f %f %f

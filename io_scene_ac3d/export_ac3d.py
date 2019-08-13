@@ -185,7 +185,7 @@ class AC3D_OT_Export:
                 ob.hide_viewport = False
 
             if (not self.export_conf.use_render_layers or
-                ob.is_visible(self.export_conf.context.scene)) and (
+                ob.visible_get()) and (#was .is_visible(self.export_conf.context.scene)
                 (not self.export_conf.use_selection or
                  ob.select_get() or ignore_select)):
                 ob.hide_viewport = hidden
@@ -193,7 +193,7 @@ class AC3D_OT_Export:
                 # We need to check for dupligroups first as every type of
                 # object can be converted to a dupligroup without removing
                 # the data from the old type.
-                if ob.dupli_type == 'GROUP':
+                if ob.instance_type == 'GROUP':#was .dupli_type
                     ac_ob = AC3D.Group(
                         ob.name, ob, self.export_conf, local_transform)
                     children = [

@@ -285,6 +285,11 @@ class AC3D_OT_Export(Operator, ExportHelper):
         description="Merge materials that are identical",
         default=False,
     )
+    global_doublesided: BoolProperty(
+        name="Double sided",
+        description="If all geometry in AC3D will be double sided or backface culled.",
+        default=False,
+    )
 #    mircol_as_emis: BoolProperty(
 #        name="Mirror col to Emis",
 #        description="Export Blender mirror colour to AC3D emissive colour",

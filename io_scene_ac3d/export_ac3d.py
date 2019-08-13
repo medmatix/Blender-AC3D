@@ -73,6 +73,7 @@ class ExportConf:
         export_hidden,
         export_lights,
         crease_angle,
+        global_doublesided,
     ):
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
@@ -89,6 +90,7 @@ class ExportConf:
         self.export_hidden = export_hidden
         self.export_rot = export_rot
         self.export_lights = export_lights
+        self.global_doublesided=global_doublesided
         # if any mesh has no material, this will be changed to 0 and
         # DefaultWhite will be output.
         self.mat_offset = 1
@@ -117,6 +119,7 @@ class AC3D_OT_Export:
         export_hidden=False,
         export_lights=False,
         crease_angle=radians(40.0),
+        global_doublesided=False,
     ):
 
         self.export_conf = ExportConf(
@@ -135,6 +138,7 @@ class AC3D_OT_Export:
             export_hidden,
             export_lights,
             crease_angle,
+            global_doublesided,
         )
 
         # TRACE("Global: {0}".format(global_matrix))

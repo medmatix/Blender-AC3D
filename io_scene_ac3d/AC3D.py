@@ -405,7 +405,7 @@ class Poly(Object):
                 uv_coords = None
 
             surf = self.Surface(self.export_config, poly, self.ac_mats,
-                                True, is_flipped,# this True should maybe be a export option as show_double_sided is no longer supported in Blender 2.80
+                                self.export_config.global_doublesided, is_flipped,# show_double_sided is no longer supported in Blender 2.80
                                 uv_coords, 0)
             self.surfaces.append(surf)
 
@@ -435,7 +435,7 @@ class Poly(Object):
                     self.export_config,
                     bl_edge,
                     self.ac_mats,
-                    mesh.show_double_sided,
+                    self.export_config.global_doublesided,
                     is_flipped,
                     None,
                     2)

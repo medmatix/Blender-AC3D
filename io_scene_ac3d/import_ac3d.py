@@ -645,7 +645,7 @@ class AcObj:
 
                 if len(self.tex_name) and len(surf.uv_refs) >= 3:
                     for _i_uv, uv in enumerate(surf.uv_refs):
-                        uv_layer.data[uv_layer_index].uv = uv
+                        uv_layer.data[uv_layer_index].uv = [uv[0]*self.texrep[0]+self.texoff[0], uv[1]*self.texrep[1]+self.texoff[1]]
                         uv_layer_index += 1
 
 #           me.show_double_sided = two_sided_lighting

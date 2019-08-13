@@ -240,122 +240,137 @@ class Poly(Object):
 
             if not len(self.tex_name):
                 if bl_mat.node_tree:
-                    textures = []
-                    textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_IMAGE'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
-                    print(textures)
-                    for tex_slot in textures:
-#                        old_tc = tex_slot.texture_coords
-#                        if tex_slot.texture_coords != 'UV':
-#                            tex_slot.texture_coords = 'UV'
-                            # tex_slot.uv_layer =
-                        bl_tex = tex_slot#.texture
-#                        if bl_tex.type == 'IMAGE':
-                        bl_im = bl_tex.image
-#                        else:
-#                            bl_im = None
-
-                        if (bl_im is None):
-                            print("Texture has no image data (skipping): "
-                                  "Tex name=" + bl_tex.name +
-                                  " Mat name=" + bl_mat.name)
-                            self.export_config.operator.report(
-                                {'WARNING'},
-                                'AC3D Exporter: Texture "' + bl_tex.name +
-                                '" in material: "' + bl_mat.name + '" contains'
-                                ' no image data and was not exported.')
-                            continue
-                            
-                        #2.80 these 2 lines:
-                        full_path = bpy.path.abspath(bl_im.filepath, library=bl_im.library)
-                        norm_path = os.path.normpath(full_path)
-                        
-                        tex_name = bpy.path.basename(norm_path)
-                        export_tex = os.path.join(
-                            self.export_config.exportdir, tex_name)
-
-                        if bl_im.packed_file:
-                            splt = export_tex.rsplit('.', 1)[0]
-                            export_tex = splt + '.png'
-                            tex_name = bpy.path.basename(export_tex)
-
-                        # TRACE('Exporting texture "{0}" to "{1}"'.format(
-                        #   bl_im.filepath, export_tex))
-                        # TODO: Optionally over-write existing textures
-#                        if not bl_im.has_data:
-                            # sometimes it has data, but its just not updated.
-#                            try:
-#                                bl_im.update()
-#                            except RuntimeError:
-#                                print("")
-
-                        if bl_im.has_data:
-                            if not os.path.exists(export_tex):
-                                if bl_im.packed_file:
-                                    bl_im.file_format = 'PNG'
-                                    orig_file_path = bl_im.filepath
-                                    bl_im.filepath_raw = export_tex
-                                    # print(bl_im.filepath)
-                                    # print(bl_im.filepath_raw)
-                                    bl_im.save()
-                                    bl_im.filepath_raw = orig_file_path
-                                    # base = os.path.splitext(export_tex)[0]
-                                    # os.rename(export_tex, base + ".png")
-                                    # bl_im.unpack('WRITE_ORIGINAL')
-                                    # We cannot repack it after unpacking, as
-                                    # that will remove the newly saved image
-                                    # from the disk:
-                                    # bl_im.pack(True)
-                                else:
-                                    abs_path = bpy.path.abspath(bl_im.filepath)
-                                    if not os.path.exists(abs_path):
-                                        TRACE('Warning: Texture doesn\'t '
-                                              'exists: {0}'.format(
-                                                  bl_im.filepath))
-                                    else:
-                                        if not bl_im.is_dirty:
-                                            shutil.copy(abs_path, export_tex)
-                                        else:
-                                            # To protect original texture, we
-                                            # actually save the modified
-                                            # texture only to the export
-                                            # location.
-                                            # After exporting, the texture in
-                                            # Blender will point to the old
-                                            # location, but no longer be dirty.
-                                            # Therefore users should be
-                                            # careful to save the image
-                                            # manually if they want the
-                                            # original to be overwritten.
-                                            orig_file_path = bl_im.filepath
-                                            bl_im.filepath_raw = export_tex
-                                            bl_im.save()
-                                            bl_im.filepath_raw = orig_file_path
-                            # else:
-                                # TRACE('File already exists "{0}"- not '
-                                #   'overwriting!'.format(tex_name))
+                    doSearch = False
+                    try:
+                        principled = next(n for n in bl_mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+                        base_color = principled.inputs['Base Color']
+                        link = base_color.links[0]
+                        link_node = link.from_node
+                        if link_node.type == 'TEX_IMAGE' and link_node.image:
+                            self._processTexture(link_node.image, bl_mat)
                         else:
-                            self.export_config.operator.report(
-                                {'WARNING'},
-                                'AC3D Exporter: Texture "' + bl_tex.name +
-                                '" (' + tex_name + ')' + ' in material: "' +
-                                bl_mat.name + '" contains no image and was '
-                                'not exported alongside model. (The .ac '
-                                'texture reference was exported though)')
+                            doSearch = True
+                    except:
+                        doSearch = True
+                    if doSearch:
+                        textures = []
+                        textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_IMAGE'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
+                        print(textures)
+                        for tex_slot in textures:
+    #                        old_tc = tex_slot.texture_coords
+    #                        if tex_slot.texture_coords != 'UV':
+    #                            tex_slot.texture_coords = 'UV'
+                                # tex_slot.uv_layer =
+                            bl_tex = tex_slot#.texture
+    #                        if bl_tex.type == 'IMAGE':
+                            bl_im = bl_tex.image
+    #                        else:
+    #                            bl_im = None
 
-                        self.tex_name = tex_name
-#                        tex_slot.texture_coords = old_tc
-                        # [tex_slot.texture.repeat_x,
-                        # tex_slot.texture.repeat_y]
-                        # this is not the same as blender texture repeat!
-                        self.tex_rep = [1, 1]
-
-                        break
+                            if (bl_im is None):
+                                print("Texture has no image data (skipping): "
+                                      "Tex name=" + bl_tex.name +
+                                      " Mat name=" + bl_mat.name)
+                                self.export_config.operator.report(
+                                    {'WARNING'},
+                                    'AC3D Exporter: Texture "' + bl_tex.name +
+                                    '" in material: "' + bl_mat.name + '" contains'
+                                    ' no image data and was not exported.')
+                                continue
+                            
+                            self._processTexture(bl_im, bl_mat)
+                            break
 
             # Blender to AC3d index cross-reference
             # TRACE('Created Material {0} at index {1}'.format(
             #   ac_mats.index(ac_mat), mat_index))
             self.ac_mats[mat_index] = ac_mats.index(ac_mat)
             mat_index = mat_index + 1
+
+    def _processTexture(self, image, bl_mat):
+        #2.80 these 2 lines:
+        full_path = bpy.path.abspath(image.filepath, library=image.library)
+        norm_path = os.path.normpath(full_path)
+        
+        tex_name = bpy.path.basename(norm_path)
+        export_tex = os.path.join(
+            self.export_config.exportdir, tex_name)
+
+        if image.packed_file:
+            splt = export_tex.rsplit('.', 1)[0]
+            export_tex = splt + '.png'
+            tex_name = bpy.path.basename(export_tex)
+
+        # TRACE('Exporting texture "{0}" to "{1}"'.format(
+        #   bl_im.filepath, export_tex))
+        # TODO: Optionally over-write existing textures
+#                        if not bl_im.has_data:
+            # sometimes it has data, but its just not updated.
+#                            try:
+#                                bl_im.update()
+#                            except RuntimeError:
+#                                print("")
+
+        if image.has_data:
+            if not os.path.exists(export_tex):
+                if image.packed_file:
+                    image.file_format = 'PNG'
+                    orig_file_path = image.filepath
+                    image.filepath_raw = export_tex
+                    # print(bl_im.filepath)
+                    # print(bl_im.filepath_raw)
+                    image.save()
+                    image.filepath_raw = orig_file_path
+                    # base = os.path.splitext(export_tex)[0]
+                    # os.rename(export_tex, base + ".png")
+                    # bl_im.unpack('WRITE_ORIGINAL')
+                    # We cannot repack it after unpacking, as
+                    # that will remove the newly saved image
+                    # from the disk:
+                    # bl_im.pack(True)
+                else:
+                    abs_path = bpy.path.abspath(image.filepath)
+                    if not os.path.exists(abs_path):
+                        TRACE('Warning: Texture doesn\'t '
+                              'exists: {0}'.format(
+                                  image.filepath))
+                    else:
+                        if not image.is_dirty:
+                            shutil.copy(abs_path, export_tex)
+                        else:
+                            # To protect original texture, we
+                            # actually save the modified
+                            # texture only to the export
+                            # location.
+                            # After exporting, the texture in
+                            # Blender will point to the old
+                            # location, but no longer be dirty.
+                            # Therefore users should be
+                            # careful to save the image
+                            # manually if they want the
+                            # original to be overwritten.
+                            orig_file_path = image.filepath
+                            image.filepath_raw = export_tex
+                            image.save()
+                            image.filepath_raw = orig_file_path
+            # else:
+                # TRACE('File already exists "{0}"- not '
+                #   'overwriting!'.format(tex_name))
+        else:
+            self.export_config.operator.report(
+                {'WARNING'},
+                'AC3D Exporter: Texture "' + image.name +
+                '" (' + tex_name + ')' + ' in material: "' +
+                bl_mat.name + '" contains no image and was '
+                'not exported alongside model. (The .ac '
+                'texture reference was exported though)')
+
+        self.tex_name = tex_name
+#                        tex_slot.texture_coords = old_tc
+        # [tex_slot.texture.repeat_x,
+        # tex_slot.texture.repeat_y]
+        # this is not the same as blender texture repeat!
+        self.tex_rep = [1, 1]
 
     def _parseVertices(self, mesh):
         """Extract the vertices from a blender mesh."""

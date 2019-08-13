@@ -179,12 +179,13 @@ class AcMat:
                                         str(texrep[0])+'-'+str(texrep[1])]
             else:
                 bl_mat = bpy.data.materials.new(self.name)
+                bl_mat.use_nodes = True
                 bl_mat = self.make_blender_mat(bl_mat)
                 # these 2 not supported in 2.80
                 # bl_mat.use_face_texture = True
                 # bl_mat.use_face_texture_alpha = True
 
-                bl_mat.use_nodes = True
+                
                 bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
                 texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
                 texImage.image = self.get_blender_image(tex_name)

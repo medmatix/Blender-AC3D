@@ -82,7 +82,9 @@ class AcMat:
         self.shi = shi				# integer
         self.trans = trans			# float
 
-        self.rgba = [self.rgb[0], self.rgb[1], self.rgb[2], 1.0-self.trans]
+        self.rgba = [self.rgb[0], self.rgb[1], self.rgb[2], 1.0-self.trans]#used for non-nodes
+        self.rgb4 = [self.rgb[0], self.rgb[1], self.rgb[2], 1.0]#used for nodes
+        self.emis4 = [self.emis[0], self.emis[1], self.emis[2], 1.0]
 
         self.bmat_keys = {}			# dictionary list of blender materials
         self.bmat_keys.setdefault(None)
@@ -124,20 +126,27 @@ class AcMat:
         #   ((self.emis[0] + self.emis[1] + self.emis[2]) / 3.0) * 2
         # if self.import_config.use_emis_as_mircol:
         # 		bl_mat.mirror_color = self.emis
-        bl_mat.specular_color = self.spec
-        bl_mat.specular_intensity = 1.0
+        #bl_mat.specular_color = self.spec # although this can be set, it does not do anything, at least not with bsfd..
+        bl_mat.specular_intensity = (self.spec[0]+self.spec[1]+self.spec[2])/3.0
 
-        # acMin = 0.0
-        # acMax = 128.0
-        # blMin = 1.0
-        # blMax = 511.0
+        bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs['Emission'].default_value = self.emis4
+        bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
+        bsdf.inputs['Base Color'].default_value = self.rgb4
+        bsdf.inputs['Specular'].default_value = (self.spec[0]+self.spec[1]+self.spec[2])/3.0
+				
+        acMin = 0.0
+        acMax = 128.0
+        blMin = 0.0
+        blMax = 1.0
 
-        # acRange = (acMax - acMin)
-        # blRange = (blMax - blMin)
-        # bl_mat.specular_hardness = \
-        #   int(round((((float(self.shi) - acMin) * blRange) / acRange) +
-        #   blMin, 0)) not supported in 2.80
-
+        acRange = (acMax - acMin)
+        blRange = (blMax - blMin)
+        rough = (((float(self.shi) - acMin) * blRange) / acRange) + blMin
+        
+        bsdf.inputs['Roughness'].default_value = 1-rough
+        bl_mat.roughness = 1-rough
+        
         # if bl_mat.alpha < 1.0:            this is disabled cause texture may
         #                                   need transparency to be set, even
         #                                   if material is opaque.
@@ -160,6 +169,7 @@ class AcMat:
             bl_mat = self.bl_material
             if bl_mat is None:
                 bl_mat = bpy.data.materials.new(self.name)
+                bl_mat.use_nodes = True
                 bl_mat = self.make_blender_mat(bl_mat)
 
                 self.bl_material = bl_mat

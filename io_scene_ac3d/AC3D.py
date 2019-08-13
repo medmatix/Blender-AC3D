@@ -447,8 +447,9 @@ class Poly(Object):
 
         if len(self.tex_name) > 0:
             strm.write('texture "{0}"\n'.format(self.tex_name))
-            strm.write('texrep {0} {1}\n'.format(
-                self.tex_rep[0], self.tex_rep[1]))
+            if self.tex_rep[0] != 1 and self.tex_rep[1] != 1:
+                strm.write('texrep {0} {1}\n'.format(
+                    self.tex_rep[0], self.tex_rep[1]))
 
         if len(self.vertices):
             strm.write('numvert {0}\n'.format(len(self.vertices)))

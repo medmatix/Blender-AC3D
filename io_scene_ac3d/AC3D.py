@@ -668,6 +668,10 @@ class Material:
                 self.trans = bl_mat.diffuse_color[3]
                 print( 'Material '+bl_mat.name+' is not Principled BSDF using nodes, Emission not exported' )
 
+                
+            if export_config.amb_as_diff:
+                self.amb = self.rgb    
+                
             acMin = 0.0
             acMax = 128.0
             blMin = 0.0

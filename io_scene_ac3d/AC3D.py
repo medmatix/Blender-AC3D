@@ -241,18 +241,18 @@ class Poly(Object):
             if not len(self.tex_name):
                 if bl_mat.node_tree:
                     textures = []
-                    textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_SLOT'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
+                    textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_IMAGE'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
                     print(textures)
                     for tex_slot in textures:
-                        old_tc = tex_slot.texture_coords
-                        if tex_slot.texture_coords != 'UV':
-                            tex_slot.texture_coords = 'UV'
+#                        old_tc = tex_slot.texture_coords
+#                        if tex_slot.texture_coords != 'UV':
+#                            tex_slot.texture_coords = 'UV'
                             # tex_slot.uv_layer =
-                        bl_tex = tex_slot.texture
-                        if bl_tex.type == 'IMAGE':
-                            bl_im = bl_tex.image
-                        else:
-                            bl_im = None
+                        bl_tex = tex_slot#.texture
+#                        if bl_tex.type == 'IMAGE':
+                        bl_im = bl_tex.image
+#                        else:
+#                            bl_im = None
 
                         if (bl_im is None):
                             print("Texture has no image data (skipping): "
@@ -266,7 +266,7 @@ class Poly(Object):
                             continue
                             
                         #2.80 these 2 lines:
-                        bpy.path.abspath(bl_tex.filepath, library=tex.library)
+                        full_path = bpy.path.abspath(bl_im.filepath, library=bl_im.library)
                         norm_path = os.path.normpath(full_path)
                         
                         tex_name = bpy.path.basename(norm_path)
@@ -281,12 +281,12 @@ class Poly(Object):
                         # TRACE('Exporting texture "{0}" to "{1}"'.format(
                         #   bl_im.filepath, export_tex))
                         # TODO: Optionally over-write existing textures
-                        if not bl_im.has_data:
+#                        if not bl_im.has_data:
                             # sometimes it has data, but its just not updated.
-                            try:
-                                bl_im.update()
-                            except RuntimeError:
-                                print("")
+#                            try:
+#                                bl_im.update()
+#                            except RuntimeError:
+#                                print("")
 
                         if bl_im.has_data:
                             if not os.path.exists(export_tex):
@@ -343,7 +343,7 @@ class Poly(Object):
                                 'texture reference was exported though)')
 
                         self.tex_name = tex_name
-                        tex_slot.texture_coords = old_tc
+#                        tex_slot.texture_coords = old_tc
                         # [tex_slot.texture.repeat_x,
                         # tex_slot.texture.repeat_y]
                         # this is not the same as blender texture repeat!

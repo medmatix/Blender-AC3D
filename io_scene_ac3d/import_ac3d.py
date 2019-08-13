@@ -884,7 +884,7 @@ class AC3D_OT_Import:
             use_image_search=False,
             global_matrix=None,
             transparency_method='Z_TRANSPARENCY',
-            use_emis_as_mircol=True,
+            use_emis_as_mircol=False,
             use_amb_as_mircol=False,
             display_textured_solid=False,
             parent_to="",

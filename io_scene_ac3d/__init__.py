@@ -109,15 +109,15 @@ class AC3D_OT_Import(Operator, ImportHelper):
             ('RAYTRACE', "RayTrace", "")),
         default='Z_TRANSPARENCY')
 
-    use_emis_as_mircol: BoolProperty(
-        name="Set Emis to Mirror colour",
-        description="Set AC3D Emission colour into Blender Mirror colour",
-        default=False)
+#    use_emis_as_mircol: BoolProperty(
+#        name="Set Emis to Mirror colour",
+#        description="Set AC3D Emission colour into Blender Mirror colour",
+#        default=False)
 
-    use_amb_as_mircol: BoolProperty(
-        name="Set Amb to Mirror colour",
-        description="Set AC3D Ambient colour into Blender Mirror colour",
-        default=False)
+#    use_amb_as_mircol: BoolProperty(
+#        name="Set Amb to Mirror colour",
+#        description="Set AC3D Ambient colour into Blender Mirror colour",
+#        default=False)
 
     display_textured_solid: BoolProperty(
         name="Display textured solid",
@@ -285,16 +285,16 @@ class AC3D_OT_Export(Operator, ExportHelper):
         description="Merge materials that are identical",
         default=False,
     )
-    mircol_as_emis: BoolProperty(
-        name="Mirror col to Emis",
-        description="Export Blender mirror colour to AC3D emissive colour",
-        default=False,
-    )
-    mircol_as_amb: BoolProperty(
-        name="Mirror col to Amb",
-        description="Export Blender mirror colour to AC3D ambient colour",
-        default=False,
-    )
+#    mircol_as_emis: BoolProperty(
+#        name="Mirror col to Emis",
+#        description="Export Blender mirror colour to AC3D emissive colour",
+#        default=False,
+#    )
+#    mircol_as_amb: BoolProperty(
+#        name="Mirror col to Amb",
+#        description="Export Blender mirror colour to AC3D ambient colour",
+#        default=False,
+#    )
     amb_as_diff: BoolProperty(
         name="Amb same as Diff",
         description="Export AC3D ambient colour to be like Diffuse color",

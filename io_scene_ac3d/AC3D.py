@@ -595,10 +595,10 @@ class Material:
                  export_config=None):
         self.name = name								# string
         self.rgb = [1.0, 1.0, 1.0]			# [R,G,B]
-        self.amb = [0.2, 0.2, 0.2]			# [R,G,B]
+        self.amb = [0.8, 0.8, 0.8]			# [R,G,B]
         self.emis = [0.0, 0.0, 0.0]			# [R,G,B]
         self.spec = [0.5, 0.5, 0.5]			# [R,G,B]
-        self.shi = 10										# integer
+        self.shi = 64										# integer
         self.trans = 0									# float
         self.merge = False
         self.default = True
@@ -629,13 +629,7 @@ class Material:
             self.default = False
             # remove any " from the name.
             self.name = re.sub('["]', '', bl_mat.name)
-            self.rgb = bl_mat.diffuse_color  #2.79 was bl_mat.diffuse_intensity * bl_mat.diffuse_color
             
-            #2.80: Just output some common values for now: (TODO!)
-            self.amb = [0.8,0.8,0.8]
-            self.emis = [0,0,0]
-            self.shi = 64
-            self.trans = 0
             
 #            if export_config.mircol_as_amb:
 #                self.amb = bl_mat.mirror_color
@@ -649,23 +643,40 @@ class Material:
 #                self.emis = bl_mat.mirror_color
 #            else:
 #                self.emis = [bl_mat.emit/2, bl_mat.emit/2, bl_mat.emit/2]
-            self.spec = bl_mat.specular_intensity * bl_mat.specular_color
+            
+            
             self.merge = export_config.merge_materials
 
-#            acMin = 0.0
-#            acMax = 128.0
-#            blMin = 1.0
-#            blMax = 511.0
-#            acRange = (acMax - acMin)
-#            blRange = (blMax - blMin)
-#            self.shi = int(round(
-#                (((float(bl_mat.specular_hardness) - blMin) * acRange) /
-#                 blRange) + acMin, 0))
+            try:
+                nodes = bl_mat.node_tree.nodes
+                principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
+                emis_color = principled.inputs['Emission']
+                self.emis = emis_color.default_value
+                alpha = principled.inputs['Alpha']
+                self.trans = 1.0 - alpha.default_value
+                rough = 1-principled.inputs['Roughness'].default_value
+                base = principled.inputs['Base Color']
+                if not base.links or len(base.links) == 0:
+                    # no texture applied to base color, so we grab the color value
+                    self.rgb = base.default_value
+                specu = base = principled.inputs['Specular']
+                self.spec = [specu.default_value,specu.default_value,specu.default_value]
+            except:
+                self.spec = bl_mat.specular_intensity * bl_mat.specular_color
+                rough = 1-bl_mat.roughness
+                self.rgb = bl_mat.diffuse_color
+                self.trans = bl_mat.diffuse_color[3]
+                print( 'Material '+bl_mat.name+' is not Principled BSDF using nodes, Emission not exported' )
 
-#            if bl_mat.use_transparency:
-#                self.trans = 1.0 - bl_mat.alpha
-#            else:
-#                self.trans = 0.0
+            acMin = 0.0
+            acMax = 128.0
+            blMin = 0.0
+            blMax = 1.0
+            acRange = (acMax - acMin)
+            blRange = (blMax - blMin)
+            self.shi = int(round(
+                (((float(rough) - blMin) * acRange) /
+                 blRange) + acMin, 0))
 
     def write(self, strm):
         # MATERIAL %s rgb  %f %f %f  amb   %f %f %f

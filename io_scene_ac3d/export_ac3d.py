@@ -228,7 +228,7 @@ class AC3D_OT_Export:
                 elif ob.type == 'EMPTY':
                     ac_ob = AC3D.Group(
                         ob.name, ob, self.export_conf, local_transform)
-                elif ob.type == 'LAMP' and self.export_conf.export_lights:
+                elif ob.type == 'LIGHT' and self.export_conf.export_lights:
                     ac_ob = AC3D.Light(
                         ob.name, ob, self.export_conf, local_transform)
                 else:

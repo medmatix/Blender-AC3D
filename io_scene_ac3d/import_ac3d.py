@@ -648,7 +648,7 @@ class AcObj:
                         uv_layer.data[uv_layer_index].uv = [uv[0]*self.texrep[0]+self.texoff[0], uv[1]*self.texrep[1]+self.texoff[1]]
                         uv_layer_index += 1
 
-            me.show_double_sided = two_sided_lighting#at least 1 face in this mesh is double sided, so we make whole mesh double sided.
+            #me.show_double_sided = two_sided_lighting#at least 1 face in this mesh is double sided, so we make whole mesh double sided.
             self.bl_obj.show_transparent = True
 
             # apply subdivision modifier

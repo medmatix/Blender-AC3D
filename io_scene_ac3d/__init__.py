@@ -203,13 +203,13 @@ class AC3D_OT_Message(Operator):
         return wm.invoke_popup(self, width=400, height=200)
 
     def draw(self, context):
-        self.layout.label("A message has arrived")
-        row = self.layout.split(0.25)
+        self.layout.label(text="A message has arrived")
+        row = self.layout.split(factor=0.25)
         row.prop(self, "type")
         row.prop(self, "message")
-        row = self.layout.split(0.80)
-        row.label("")
-        row.operator("error.ok")
+        row = self.layout.split(factor=0.80)
+        row.label(text="")
+        row.operator("error")
 
 
 #

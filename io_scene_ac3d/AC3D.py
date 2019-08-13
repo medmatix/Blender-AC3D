@@ -594,7 +594,8 @@ class Light (Object):
         Object.__init__(self, name, 'light', bl_obj,
                         export_config, local_transform)
         if bl_obj.data:
-            self.data = bl_obj.data.name.replace('"', '')
+            self.data = bl_obj.data.type
+            #self.data = bl_obj.data.name.replace('"', '')
 
 # ------------------------------------------------------------------------------
 

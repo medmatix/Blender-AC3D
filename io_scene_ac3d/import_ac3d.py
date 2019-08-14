@@ -733,7 +733,7 @@ class AcObj:
             # bpy.ops.object.origin_set('ORIGIN_GEOMETRY', 'MEDIAN')
 
             if self.hidden is True:
-                self.bl_obj.hide_viewport = True
+                self.bl_obj.hide_set(True)
 
         TRACE("{0}+-{1} ({2})".format(str_pre, self.name, self.data))
 

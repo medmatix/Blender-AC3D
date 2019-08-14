@@ -242,8 +242,9 @@ class Poly(Object):
                 if bl_mat.node_tree:
                     doSearch = False
                     try:
-                        principled = next(n for n in bl_mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-                        base_color = principled.inputs['Base Color']
+                        shader = bl_mat.node_tree.links[0].from_node
+                        #principled = next(n for n in bl_mat.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
+                        base_color = shader.inputs['Base Color']
                         link = base_color.links[0]
                         link_node = link.from_node
                         if link_node.type == 'TEX_IMAGE' and link_node.image:
@@ -665,24 +666,49 @@ class Material:
 
             try:
                 nodes = bl_mat.node_tree.nodes
-                principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
-                emis_color = principled.inputs['Emission']
-                self.emis = emis_color.default_value
-                alpha = principled.inputs['Alpha']
-                self.trans = 1.0 - alpha.default_value
-                rough = 1-principled.inputs['Roughness'].default_value
-                base = principled.inputs['Base Color']
-                if not base.links or len(base.links) == 0:
-                    # no texture applied to base color, so we grab the color value
-                    self.rgb = base.default_value
-                specu = base = principled.inputs['Specular']
-                self.spec = [specu.default_value,specu.default_value,specu.default_value]
+                links = bl_mat.node_tree.links
+                curr_shader = links[0].from_node # This works, but not 100% that the first link is always Surface
+                #curr_shader = nodes.inputs['Surface'].links[0].from_node
+
+                if curr_shader.type == 'BSDF_PRINCIPLED':
+                    #principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
+                    principled = curr_shader
+                    emis_color = principled.inputs['Emission']
+                    self.emis = emis_color.default_value
+                    alpha = principled.inputs['Alpha']
+                    self.trans = 1.0 - alpha.default_value
+                    rough = 1-principled.inputs['Roughness'].default_value
+                    base = principled.inputs['Base Color']
+                    if not base.links or len(base.links) == 0:
+                        # no texture applied to base color, so we grab the color value
+                        self.rgb = base.default_value
+                    specu = principled.inputs['Specular']
+                    self.spec = [specu.default_value,specu.default_value,specu.default_value]
+                elif curr_shader.type == 'EEVEE_SPECULAR':
+                    specular = curr_shader
+                    emis_color = specular.inputs['Emissive Color']
+                    self.emis = emis_color.default_value
+                    trans = specular.inputs['Transparency']
+                    self.trans = trans.default_value
+                    rough = 1-specular.inputs['Roughness'].default_value
+                    base = specular.inputs['Base Color']
+                    if not base.links or len(base.links) == 0:
+                        # no texture applied to base color, so we grab the color value
+                        self.rgb = base.default_value
+                    specu = specular.inputs['Specular']
+                    self.spec = specu.default_value
+                else:
+                    self.spec = bl_mat.specular_intensity * bl_mat.specular_color
+                    rough = 1-bl_mat.roughness
+                    self.rgb = bl_mat.diffuse_color
+                    self.trans = bl_mat.diffuse_color[3]
+                    print( 'Material '+bl_mat.name+' is not Principled BSDF or Specular using nodes, Emission not exported' )
             except:
                 self.spec = bl_mat.specular_intensity * bl_mat.specular_color
                 rough = 1-bl_mat.roughness
                 self.rgb = bl_mat.diffuse_color
                 self.trans = bl_mat.diffuse_color[3]
-                print( 'Material '+bl_mat.name+' is not Principled BSDF using nodes, Emission not exported' )
+                print( 'Material '+bl_mat.name+' is not using nodes, Emission not exported' )
 
                 
             if export_config.amb_as_diff:

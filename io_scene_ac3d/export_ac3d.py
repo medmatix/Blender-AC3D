@@ -184,15 +184,15 @@ class AC3D_OT_Export:
             # their proxy is selected. We therefore consider all objects from
             # libraries as selected, as the only possibility to get them
             # considered is if their proxy should be exported.
-            hidden = ob.hide_viewport
+            hidden = ob.hide_get()
             if self.export_conf.export_hidden:
-                ob.hide_viewport = False
+                ob.hide_set(False)
 
             if (not self.export_conf.use_render_layers or
                 ob.visible_get()) and (#was .is_visible(self.export_conf.context.scene)
                 (not self.export_conf.use_selection or
                  ob.select_get() or ignore_select)):
-                ob.hide_viewport = hidden
+                ob.hide_set(hidden)
 
                 # We need to check for dupligroups first as every type of
                 # object can be converted to a dupligroup without removing
@@ -234,7 +234,7 @@ class AC3D_OT_Export:
                 else:
                     TRACE('Skipping object {0} (type={1})'.format(
                         ob.name, ob.type))
-            ob.hide_viewport = hidden
+            ob.hide_set(hidden)
             if ac_ob:
                 parent.addChild(ac_ob)
                 next_parent = ac_ob

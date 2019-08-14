@@ -58,7 +58,7 @@ class Object:
         #             put spaces into it)
 
         if bl_obj:
-            self.hidden = bl_obj.hide_viewport
+            self.hidden = bl_obj.hide_get()#bl_obj.hide_viewport or 
             self.matrix_world = bl_obj.matrix_world
             # bl_obj.matrix_parent_inverse * bl_obj.matrix_local
             localMatrix = bl_obj.matrix_local

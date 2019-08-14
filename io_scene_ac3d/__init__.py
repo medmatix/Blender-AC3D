@@ -271,8 +271,8 @@ class AC3D_OT_Export(Operator, ExportHelper):
         default='apply',
     )
     use_render_layers: BoolProperty(
-        name="Only Render Layers",
-        description="Only export from selected render layers",
+        name="Only View Layers",
+        description="Only export from selected view layers",
         default=True,
     )
     use_selection: BoolProperty(

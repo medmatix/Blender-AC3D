@@ -743,6 +743,23 @@ class Material:
                         self.rgb = base.default_value
                     specu = principled.inputs['Specular']
                     self.spec = [specu.default_value,specu.default_value,specu.default_value]
+                elif curr_shader.type == 'BSDF_DIFFUSE':
+                    diffuse = curr_shader
+                    rough = 1-diffuse.inputs['Roughness'].default_value
+                    base = diffuse.inputs['Color']
+                    if not base.links or len(base.links) == 0:
+                        # no texture applied to base color, so we grab the color value
+                        self.rgb = base.default_value
+                elif curr_shader.type == 'EEVEE_EMISSION':
+                    emission = curr_shader
+                    emis = emission.inputs['Strength']
+                    base = emission.inputs['Color']
+                    self.emis = [emis.default_value*base.default_value[0],emis.default_value*base.default_value[1],emis.default_value*base.default_value[2]]
+                    self.rgb = [0,0,0]
+                    self.amb = [0,0,0]
+                    self.spec = [0,0,0]
+                    rough = 0.5
+                    self.trans = 0.0
                 elif curr_shader.type == 'EEVEE_SPECULAR':
                     specular = curr_shader
                     emis_color = specular.inputs['Emissive Color']

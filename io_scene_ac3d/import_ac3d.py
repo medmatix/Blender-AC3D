@@ -146,20 +146,20 @@ class AcMat:
         rough = (((float(self.shi) - acMin) * blRange) / acRange) + blMin
         
         #bsdf.inputs['Roughness'].default_value = 1-rough
-        bl_mat.roughness = 1-rough
-        bl_mat.diffuse_color = self.rgba
-        bl_mat.specular_intensity = sum(self.spec)/3.0
+        
+        # Especially the transparency in diffuse_color can give trouble here if imported as 1.0 and Eevee shader put on top.
+        #bl_mat.roughness = 1-rough
+        #bl_mat.diffuse_color = self.rgba
+        #bl_mat.specular_intensity = sum(self.spec)/3.0
         
         bl_mat.node_tree.links.clear()
         bl_mat.node_tree.nodes.clear()
         bl_mat.use_nodes = True
         
-        try:
-            speccy = bl_mat.node_tree.nodes["Specular"]
-        except:
-            speccy = bl_mat.node_tree.nodes.new( type = 'ShaderNodeEeveeSpecular' )#create new specular mat
-        
         out = bl_mat.node_tree.nodes.new( type = 'ShaderNodeOutputMaterial' )
+        speccy = bl_mat.node_tree.nodes.new( type = 'ShaderNodeEeveeSpecular' )#create new specular mat
+        
+        
         link   = bl_mat.node_tree.links.new(speccy.outputs['BSDF'], out.inputs['Surface'])#set that mat as default
         
         speccy.inputs['Emissive Color'].default_value = self.emis4
@@ -1002,8 +1002,10 @@ class AC3D_OT_Import:
                     bl_space.shading.light = 'STUDIO'
                     bl_space.shading.color_type = 'TEXTURE'
                     bl_space.shading.background_type = 'THEME'
-                    #bl_space.shading.studio_light = "outdoor.sl" # will gives exception sometimes when loading into a scene with prior models present
-                    
+                    try:
+                        bl_space.shading.studio_light = "outdoor.sl" # will gives exception sometimes when loading into a scene with prior models present
+                    except:
+                        print("Outdoor.sl failed to be applied")
                     # enable these 2 lines to use the scene lights to illuminate the scene in Dev Look
                     #bl_space.shading.use_scene_lights = True
                     #bl_space.shading.use_scene_World = True

@@ -760,13 +760,13 @@ class Material:
                     self.spec = bl_mat.specular_intensity * bl_mat.specular_color
                     rough = 1-bl_mat.roughness
                     self.rgb = bl_mat.diffuse_color
-                    self.trans = bl_mat.diffuse_color[3]
+                    self.trans = 1.0-bl_mat.diffuse_color[3]
                     print( 'Material '+bl_mat.name+' is not Principled BSDF or Specular using nodes, Emission not exported' )
             except:
                 self.spec = bl_mat.specular_intensity * bl_mat.specular_color
                 rough = 1-bl_mat.roughness
                 self.rgb = bl_mat.diffuse_color
-                self.trans = bl_mat.diffuse_color[3]
+                self.trans = 1.0-bl_mat.diffuse_color[3]
                 print( 'Material '+bl_mat.name+' is not using nodes, Emission not exported' )
 
                 

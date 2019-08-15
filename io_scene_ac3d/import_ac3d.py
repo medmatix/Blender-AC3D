@@ -130,11 +130,7 @@ class AcMat:
         #bl_mat.specular_color = self.spec # although this can be set, it does not do anything, at least not with bsfd..
         
 
-        #bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
-        #bsdf.inputs['Emission'].default_value = self.emis4
-        #bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
-        #bsdf.inputs['Base Color'].default_value = self.rgb4
-        #bsdf.inputs['Specular'].default_value = sum(self.spec)/3.0
+        
 				
         acMin = 0.0
         acMax = 128.0
@@ -147,35 +143,37 @@ class AcMat:
         
         #bsdf.inputs['Roughness'].default_value = 1-rough
         
-        # Especially the transparency in diffuse_color can give trouble here if imported as 1.0 and Eevee shader put on top.
-        #bl_mat.roughness = 1-rough
-        #bl_mat.diffuse_color = self.rgba
-        #bl_mat.specular_intensity = sum(self.spec)/3.0
+        # Set the basic non-nodes material properties
+        bl_mat.roughness = 1-rough
+        bl_mat.diffuse_color = self.rgba
+        bl_mat.specular_intensity = sum(self.spec)/3.0
         
-        bl_mat.node_tree.links.clear()
-        bl_mat.node_tree.nodes.clear()
-        bl_mat.use_nodes = True
+        if self.import_config.useEeveeSpecular:
+            bl_mat.use_nodes = True
+            bl_mat.node_tree.links.clear()
+            bl_mat.node_tree.nodes.clear()
+            bl_mat.use_nodes = True # It gets unset after clearing, so we set it again
         
-        out = bl_mat.node_tree.nodes.new( type = 'ShaderNodeOutputMaterial' )
-        speccy = bl_mat.node_tree.nodes.new( type = 'ShaderNodeEeveeSpecular' )#create new specular mat
+            out = bl_mat.node_tree.nodes.new( type = 'ShaderNodeOutputMaterial' )
+            speccy = bl_mat.node_tree.nodes.new( type = 'ShaderNodeEeveeSpecular' )#create new specular mat
         
+            link   = bl_mat.node_tree.links.new(speccy.outputs['BSDF'], out.inputs['Surface'])#set that mat as default
         
-        link   = bl_mat.node_tree.links.new(speccy.outputs['BSDF'], out.inputs['Surface'])#set that mat as default
+            speccy.inputs['Emissive Color'].default_value = self.emis4
+            speccy.inputs['Transparency'].default_value = self.trans
+            speccy.inputs['Base Color'].default_value = self.rgb4
+            speccy.inputs['Specular'].default_value = self.spec4
+            speccy.inputs['Roughness'].default_value = 1-rough
+        else:
+            bl_mat.use_nodes = True
+            bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+            bsdf.inputs['Emission'].default_value = self.emis4
+            bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
+            bsdf.inputs['Base Color'].default_value = self.rgb4
+            bsdf.inputs['Specular'].default_value = sum(self.spec)/3.0
+            #bsdf.inputs['IOR'].default_value = 1.0
+            #bsdf.inputs['Transmission'].default_value = 1.0
         
-        speccy.inputs['Emissive Color'].default_value = self.emis4
-        speccy.inputs['Transparency'].default_value = self.trans
-        speccy.inputs['Base Color'].default_value = self.rgb4
-        speccy.inputs['Specular'].default_value = self.spec4
-        speccy.inputs['Roughness'].default_value = 1-rough
-        
-        
-        # if bl_mat.alpha < 1.0:            this is disabled cause texture may
-        #                                   need transparency to be set, even
-        #                                   if material is opaque.
-        # bl_mat.use_transparency = True    not supported in 2.80
-        # bl_mat.transparency_method = \    not supported in 2.80
-        #     self.import_config.transparency_method
-
         return bl_mat
 
     """
@@ -191,7 +189,6 @@ class AcMat:
             bl_mat = self.bl_material
             if bl_mat is None:
                 bl_mat = bpy.data.materials.new(self.name)
-                bl_mat.use_nodes = True
                 bl_mat = self.make_blender_mat(bl_mat)
 
                 self.bl_material = bl_mat
@@ -201,29 +198,18 @@ class AcMat:
                                         str(texrep[0])+'-'+str(texrep[1])]
             else:
                 bl_mat = bpy.data.materials.new(self.name)
-                bl_mat.use_nodes = True
                 bl_mat = self.make_blender_mat(bl_mat)
-                # these 2 not supported in 2.80
-                # bl_mat.use_face_texture = True
-                # bl_mat.use_face_texture_alpha = True
 
-                
-                bsdf = bl_mat.node_tree.nodes["Specular"]
+                bsdf = None
+                if self.import_config.useEeveeSpecular:
+                    bsdf = bl_mat.node_tree.nodes["Specular"]
+                else:
+                    bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+                    
                 texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
                 texImage.image = self.get_blender_image(tex_name)
                 bl_mat.node_tree.links.new(
                     bsdf.inputs['Base Color'], texImage.outputs['Color'])
-
-                # tex_slot = bl_mat.texture_slots.add()
-                # tex_slot.texture = self.get_blender_texture(tex_name, texrep)
-                # tex_slot.texture_coords = 'UV'
-                # tex_slot.alpha_factor = 1.0
-                # tex_slot.use_map_alpha = True
-                # tex_slot.use = True
-                # tex_slot.uv_layer = 'UVMap'
-                # tex_slot.texture.repeat_x = 1#texrep[0]
-                # tex_slot.texture.repeat_y = 1#texrep[1]
-                # tex_slot.blend_type = 'MULTIPLY'
 
                 self.bmat_keys[tex_name +
                                str(texrep[0])+'-'+str(texrep[1])] = bl_mat
@@ -877,7 +863,8 @@ class ImportConf:
             use_amb_as_mircol,
             display_textured_solid,
             parent_to,
-            collection_name):
+            collection_name,
+            useEeveeSpecular):
 
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
@@ -891,6 +878,7 @@ class ImportConf:
 #        self.hide_hidden_objects = hide_hidden_objects
         self.parent_to = parent_to
         self.collection_name = collection_name
+        self.useEeveeSpecular = useEeveeSpecular
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -911,7 +899,8 @@ class AC3D_OT_Import:
             use_amb_as_mircol=False,
             display_textured_solid=False,
             parent_to="",
-            collection_name=""):
+            collection_name="",
+            useEeveeSpecular=False):
 
         self.import_config = ImportConf(
             operator,
@@ -923,7 +912,8 @@ class AC3D_OT_Import:
             use_amb_as_mircol,
             display_textured_solid,
             parent_to,
-            collection_name)
+            collection_name,
+            useEeveeSpecular)
 
         self.tokens = {
             'MATERIAL':		self.read_material,

@@ -126,6 +126,12 @@ class AC3D_OT_Import(Operator, ImportHelper):
 #            "transparency for materials is then only seen in Material "
 #            "view and Render view)"),
 #        default=False)
+        
+    useEeveeSpecular: BoolProperty(
+        name="Use Eevee Specular",
+        description="Set materials to use Eevee Specular instead of Principled BSDF",
+        default=False)
+
 
     rotation: FloatVectorProperty(
         description="Import Rotation",

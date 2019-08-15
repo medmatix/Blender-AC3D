@@ -119,13 +119,13 @@ class AC3D_OT_Import(Operator, ImportHelper):
 #        description="Set AC3D Ambient colour into Blender Mirror colour",
 #        default=False)
 
-    display_textured_solid: BoolProperty(
-        name="Display textured solid",
-        description=(
-            "Show textures applied when in Solid view (notice that "
-            "transparency for materials is then only seen in Material "
-            "view and Render view)"),
-        default=False)
+#    display_textured_solid: BoolProperty(
+#        name="Display textured solid",
+#        description=(
+#            "Show textures applied when in Solid view (notice that "
+#            "transparency for materials is then only seen in Material "
+#            "view and Render view)"),
+#        default=False)
 
     rotation: FloatVectorProperty(
         description="Import Rotation",

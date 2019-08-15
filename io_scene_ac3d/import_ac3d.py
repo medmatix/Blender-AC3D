@@ -1002,8 +1002,14 @@ class AC3D_OT_Import:
                     bl_space.shading.light = 'STUDIO'
                     bl_space.shading.color_type = 'TEXTURE'
                     bl_space.shading.background_type = 'THEME'
-                    bl_space.shading.studio_light = "outdoor.sl"
-                    #bl_space.shading.type = 'MATERIAL' if want Dev Look
+                    #bl_space.shading.studio_light = "outdoor.sl" # will gives exception sometimes when loading into a scene with prior models present
+                    
+                    # enable these 2 lines to use the scene lights to illuminate the scene,
+                    # commented out due to not sure we should mess with the users Blender UI settings at all.
+                    # I also tend to think the option to display a textured solid in the 2.79 script was a mistake.
+                    # - Nikolai
+                    #bl_space.shading.use_scene_lights = True
+                    #bl_space.shading.use_scene_World = True
                     break
 
         return None

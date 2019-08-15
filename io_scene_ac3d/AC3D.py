@@ -174,6 +174,7 @@ class Poly(Object):
                         export_config, local_transform)
 
         self.crease = None
+        self.subdiv = 0
         self.vertices = []
         self.surfaces = []
         self.tex_name = ''     # texture name (filename of texture)
@@ -189,21 +190,82 @@ class Poly(Object):
             self._parseMesh(ac_mats)
 
     def _parseMesh(self, ac_mats):
-        depsgraph = self.export_config.context.evaluated_depsgraph_get()
-        mesh = self.bl_obj.to_mesh(preserve_all_data_layers=True,depsgraph=depsgraph)#2.79 was: self.export_config.context.scene, True, 'PREVIEW'
+        # the depsgraph we are exporting should have all modifiers applied according to 2.80 API, but its not the case. [Luckily]
+        # We work on a copy of the object and apply all modifiers except EDGE_SPLIT and SUBSURF:
+        
+        # if we are going to work on a copy of the object
+        useCopy = False
+        
+        apply_list = []
+        for mod in self.bl_obj.modifiers:
+            
+            if mod.type == 'EDGE_SPLIT':
+                self.crease = round(degrees(mod.split_angle), 3)
+            elif mod.type == 'SUBSURF':
+                self.subdiv = mod.levels
+            else:
+                # this modifier we add so that we later can apply it on the copy before exporting
+                apply_list.append(mod.name)
+                useCopy = True
+        
+        self.bl_obj_copy = self.bl_obj
+        mesh = None
+        col = None
+        mesh_copy = None
+        if useCopy:
+            # First make an instance of the object
+            self.bl_obj_copy = self.bl_obj.copy()
+            # Now we make the instance a full fledged copy
+            mesh_copy = self.bl_obj_copy.data.copy()
+            self.bl_obj_copy.data = mesh_copy
+            
+            prev_selected = []
+            old_active = None
+            view_layer = bpy.context.view_layer
+            if bpy.context.active_object:
+                # Remember what is currently active
+                old_active = view_layer.objects.active#bpy.context.active_object
+            for objekt in view_layer.objects:
+                # Remember what is currently selected
+                if objekt.select_get():
+                    prev_selected.append(objekt)
+            # make new temporary Collection in current view layer
+            col = bpy.data.collections.new("export_ac3d_temp")
+            bpy.context.scene.collection.children.link(col)
+            # Add the object copy to the new layer
+            col.objects.link(self.bl_obj_copy)
+            # In order to apply modifiers the object must be added to the scene and be selected and the active object        
+            bpy.ops.object.select_all(action='DESELECT')
+            self.bl_obj_copy.select_set(True)
+            view_layer.objects.active = self.bl_obj_copy
+            for name in apply_list:
+                # Apply the modifiers, notice that we use the names from the original object, but thats fine, names will be the same in the copy
+                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=name)
+            # We get a depsgraph while the copy is attached to scene
+            depsgraph = self.export_config.context.evaluated_depsgraph_get()
+            # We use the depsgraph to get a mesh with uv and all data
+            mesh = self.bl_obj_copy.to_mesh(preserve_all_data_layers=True,depsgraph=depsgraph)
+            # Now we deselect the copy and reselect and make active the previous
+            self.bl_obj_copy.select_set(False)
+            for objekt in prev_selected:
+                objekt.select_set(True)
+            if old_active:
+                view_layer.objects.active = old_active
+        else:
+            depsgraph = self.export_config.context.evaluated_depsgraph_get()
+            mesh = self.bl_obj_copy.to_mesh(preserve_all_data_layers=True,depsgraph=depsgraph)#2.79 was: self.export_config.context.scene, True, 'PREVIEW'
+        
         orig_mesh = self.bl_obj.data
         if (orig_mesh):
             if (orig_mesh.name):
                 # quotes not allowed...
                 self.data = orig_mesh.name.replace('"', '')
+                
+        # In these methods we take great care to copy not reference anything we need when writing the file,
+        # cause when we clean up the copy, all memory it references will be cleaned (read corrupt)
         self._parseMaterials(mesh, ac_mats)
         self._parseVertices(mesh)
         self._parseFaces(mesh)
-
-        for mod in self.bl_obj.modifiers:
-            if mod.type == 'EDGE_SPLIT':
-                self.crease = round(degrees(mod.split_angle), 3)
-                break
 
         if not self.crease:
             if mesh.use_auto_smooth:
@@ -211,9 +273,18 @@ class Poly(Object):
             else:
                 self.crease = round(
                     degrees(self.export_config.crease_angle), 3)
-
-        # bpy.data.meshes.remove(mesh)
-
+        
+        mesh = None
+        self.bl_obj_copy.to_mesh_clear()# needed since object own the mesh and we dont need it anymore
+        
+        if useCopy:
+            # Cleanup time
+            # We delete the copy, the new collection and the mesh of the copy. Should leave no orphan data unless there is an exception in the code.
+            bpy.data.objects.remove(self.bl_obj_copy, do_unlink=True, do_id_user=True, do_ui_user=True)
+            bpy.data.collections.remove(col, do_unlink=True, do_id_user=True, do_ui_user=True)
+            bpy.data.meshes.remove(mesh_copy, do_unlink=True, do_id_user=True, do_ui_user=True)
+        self.bl_obj_copy = None
+        
     def _parseMaterials(self, mesh, ac_mats):
         """
         Material parser and global mapping.
@@ -254,19 +325,13 @@ class Poly(Object):
                     except:
                         doSearch = True
                     if doSearch:
+                        # No texture found in Shaders Base Color, we do a search for any texture attached to the Material
+                        # In future do a more deep check in the shader used, so we dont have to resort to this.
                         textures = []
                         textures.extend([x for x in bl_mat.node_tree.nodes if x.type=='TEX_IMAGE'])#2.79 was: #for tex_slot in bl_mat.node_tree.texture_slots:
                         print(textures)
-                        for tex_slot in textures:
-    #                        old_tc = tex_slot.texture_coords
-    #                        if tex_slot.texture_coords != 'UV':
-    #                            tex_slot.texture_coords = 'UV'
-                                # tex_slot.uv_layer =
-                            bl_tex = tex_slot#.texture
-    #                        if bl_tex.type == 'IMAGE':
+                        for bl_tex in textures:
                             bl_im = bl_tex.image
-    #                        else:
-    #                            bl_im = None
 
                             if (bl_im is None):
                                 print("Texture has no image data (skipping): "
@@ -367,10 +432,8 @@ class Poly(Object):
                 'texture reference was exported though)')
 
         self.tex_name = tex_name
-#                        tex_slot.texture_coords = old_tc
-        # [tex_slot.texture.repeat_x,
-        # tex_slot.texture.repeat_y]
-        # this is not the same as blender texture repeat!
+        
+        # Note texrep is NOT the same as Blenders texture_repeat
         self.tex_rep = [1, 1]
 
     def _parseVertices(self, mesh):
@@ -400,17 +463,14 @@ class Poly(Object):
 
         for face_idx in range(len(mesh.polygons)):
             poly = mesh.polygons[face_idx]
-
+            
             uv_coords = []
             no_uv = False
             if(uv_layer):
                 for loop_index in range(poly.loop_start,
                                         poly.loop_start + poly.loop_total):
-                    # print("    Vertex: %d" %
-                    #   mesh.loops[loop_index].vertex_index)
-                    # print("    UV: %r" %
-                    #   uv_layer[loop_index].uv)
-                    uv_coords.append(uv_layer.data[loop_index].uv)
+                    #need to do explicit copy everything since this mesh might be deleted so the memory corrupted.
+                    uv_coords.append([uv_layer.data[loop_index].uv[0],uv_layer.data[loop_index].uv[1]])
                     if(not uv_layer.data[loop_index].uv):
                         no_uv = True
 
@@ -460,6 +520,9 @@ class Poly(Object):
     def _write(self, strm):
 
         strm.write('crease {0}\n'.format(self.crease))
+        
+        if self.subdiv > 0:
+            strm.write('subdiv {0}\n'.format(self.subdiv))
 
         if len(self.tex_name) > 0:
             strm.write('texture "{0}"\n'.format(self.tex_name))
@@ -471,7 +534,7 @@ class Poly(Object):
             strm.write('numvert {0}\n'.format(len(self.vertices)))
             for vert in self.vertices:
                 x = '{0:.5f}'.format(round(vert[0], 5)).rstrip('0').rstrip('.')
-                # with more than 5 digits the Blender internal float
+                # with more than 5 digits the Blender (2.79) internal float
                 # representation becomes unreliable. Like 1 can
                 # become 0.999999 and stuff.
                 y = '{0:.5f}'.format(round(vert[1], 5)).rstrip('0').rstrip('.')
@@ -495,30 +558,32 @@ class Poly(Object):
                       surf_type):
             self.export_config = export_config
             self.mat = 0		# material index for this surface
-            self.bl_face = bl_face
+            self.bl_face_vertices = None
+            self.surf_ref = None
             self.uv_coords = uv_coords
             self.is_two_sided = is_two_sided
             self.is_flipped = is_flipped
             self.ac_surf_flags = self.SurfaceFlags(surf_type, False, True)
 
             self.parse_blender_face(bl_face, ac_mats)
-
+            
         def write(self, ac_file):
             surf_flags = self.ac_surf_flags.getFlags()
             ac_file.write('SURF {0:#X}\n'.format(surf_flags))
             ac_file.write('mat {0}\n'.format(
                 self.mat-self.export_config.mat_offset))
-            ac_file.write('refs {0}\n'.format(len(self.bl_face.vertices)))
+            ac_file.write('refs {0}\n'.format(self.bl_face_vertices))
 
-            r = range(len(self.bl_face.vertices))
+            r = range(self.bl_face_vertices)
+            # This is to fix normals when scaled negative
             if self.is_flipped:
                 r = reversed(r)
 
             if self.uv_coords:
                 for n in r:
-                    surf_ref = self.bl_face.vertices[n]
+                    surf_ref = self.surf_ref[n]
                     uv_ref = self.uv_coords[n]
-                    # Blender seems to use doubles internally here, so more
+                    # Blender (2.79) seems to use doubles internally here, so more
                     # than 5 digits is okay.
                     u = '{0:.6f}'.format(
                         round(uv_ref[0], 6)).rstrip('0').rstrip('.')
@@ -527,7 +592,7 @@ class Poly(Object):
                     ac_file.write('{0} {1:s} {2:s}\n'.format(surf_ref, u, v))
             else:
                 for n in r:
-                    surf_ref = self.bl_face.vertices[n]
+                    surf_ref = self.surf_ref[n]
                     ac_file.write('{0} 0 0\n'.format(surf_ref))
 
         def parse_blender_face(self, bl_face, ac_mats):
@@ -553,6 +618,14 @@ class Poly(Object):
 
             if self.mat == 0:
                 self.export_config.mat_offset = 0
+            
+            #need to do explicit copy everything since this mesh might be deleted so the memory corrupted.
+            self.bl_face_vertices = len(bl_face.vertices)
+            r = range(self.bl_face_vertices)
+                        
+            self.surf_ref = []
+            for n in r:
+                self.surf_ref.append(bl_face.vertices[n])
 
         class SurfaceFlags:
             def __init__(self, surf_type, is_smooth, is_twosided):
@@ -595,6 +668,7 @@ class Light (Object):
         Object.__init__(self, name, 'light', bl_obj,
                         export_config, local_transform)
         if bl_obj.data:
+            # We set the data to the type of Light, like 'SUN', 'POINT' etc..
             self.data = bl_obj.data.type
             #self.data = bl_obj.data.name.replace('"', '')
 
@@ -622,7 +696,7 @@ class Material:
         self.export_config = export_config
 
         if bl_mat:
-            # Blender:
+            # Blender 2.79:
             # ========
             # diffuse_intensity  : 0-1
             # diffuse_color      : 0-1 vector
@@ -646,21 +720,6 @@ class Material:
             self.default = False
             # remove any " from the name.
             self.name = re.sub('["]', '', bl_mat.name)
-            
-            
-#            if export_config.mircol_as_amb:
-#                self.amb = bl_mat.mirror_color
-#            elif export_config.amb_as_diff:
-#                self.amb = self.rgb
-#            else:
-#                self.amb = [bl_mat.ambient, bl_mat.ambient, bl_mat.ambient]
-#            if export_config.mircol_as_emis:
-                # * bl_mat.emit   confusing if enabled, should be either
-                # mirror color or greyscale emissive
-#                self.emis = bl_mat.mirror_color
-#            else:
-#                self.emis = [bl_mat.emit/2, bl_mat.emit/2, bl_mat.emit/2]
-            
             
             self.merge = export_config.merge_materials
 

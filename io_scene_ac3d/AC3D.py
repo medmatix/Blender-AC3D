@@ -370,16 +370,11 @@ class Poly(Object):
         # TRACE('Exporting texture "{0}" to "{1}"'.format(
         #   bl_im.filepath, export_tex))
         # TODO: Optionally over-write existing textures
-#                        if not bl_im.has_data:
-            # sometimes it has data, but its just not updated.
-#                            try:
-#                                bl_im.update()
-#                            except RuntimeError:
-#                                print("")
 
         if image.has_data:
             if not os.path.exists(export_tex):
                 if image.packed_file:
+                    old_file_format = image.file_format
                     image.file_format = 'PNG'
                     orig_file_path = image.filepath
                     image.filepath_raw = export_tex
@@ -387,6 +382,7 @@ class Poly(Object):
                     # print(bl_im.filepath_raw)
                     image.save()
                     image.filepath_raw = orig_file_path
+                    image.file_format = old_file_format
                     # base = os.path.splitext(export_tex)[0]
                     # os.rename(export_tex, base + ".png")
                     # bl_im.unpack('WRITE_ORIGINAL')

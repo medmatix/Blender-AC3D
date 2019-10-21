@@ -200,7 +200,9 @@ class Poly(Object):
         for mod in self.bl_obj.modifiers:
             
             if mod.type == 'EDGE_SPLIT':
-                self.crease = round(degrees(mod.split_angle), 3)
+                self.crease = round(degrees(180), 3)
+                apply_list.append(mod.name)
+                useCopy = True
             elif mod.type == 'SUBSURF':
                 self.subdiv = mod.levels
             else:

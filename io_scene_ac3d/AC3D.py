@@ -52,7 +52,7 @@ class Object:
         self.type = ob_type
         self.bl_obj = bl_obj
         self.hidden = False
-        self.data = ''				# custom data (eg. description)
+        self.data = ''              # custom data (eg. description)
         # custom url (use for whatever you want but never ever
         self.url = ''
         #             put spaces into it)
@@ -197,19 +197,28 @@ class Poly(Object):
         useCopy = False
         
         apply_list = []
+        remove_list = []
+        number_of_subdivs = 0
         for mod in self.bl_obj.modifiers:
             
             if mod.type == 'EDGE_SPLIT':
-                self.crease = round(degrees(180), 3)
+                self.crease = 180
                 apply_list.append(mod.name)
                 useCopy = True
             elif mod.type == 'SUBSURF':
                 self.subdiv = mod.levels
+                remove_list.append(mod.name)
+                number_of_subdivs += 1
             else:
                 # this modifier we add so that we later can apply it on the copy before exporting
                 apply_list.append(mod.name)
                 useCopy = True
-        
+
+        if (self.crease and self.subdiv > 0) or number_of_subdivs > 1:
+            #since both subdiv and edgesplit is there, we need to apply also subdiv and not write the subdiv tag in AC3D file
+            self.subdiv = 0
+            remove_list = []
+            
         self.bl_obj_copy = self.bl_obj
         mesh = None
         col = None
@@ -240,9 +249,13 @@ class Poly(Object):
             bpy.ops.object.select_all(action='DESELECT')
             self.bl_obj_copy.select_set(True)
             view_layer.objects.active = self.bl_obj_copy
-            for name in apply_list:
+            for modname in remove_list:
+                bpy.ops.object.modifier_remove(modifier=modname)
+            bpy.ops.object.convert(target='MESH') # convert selected to mesh
+            mesh_copy = self.bl_obj_copy.data
+#            for name in apply_list:
                 # Apply the modifiers, notice that we use the names from the original object, but thats fine, names will be the same in the copy
-                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=name)
+#                bpy.ops.object.modifier_apply(apply_as='DATA', modifier=name)
             # We get a depsgraph while the copy is attached to scene
             depsgraph = self.export_config.context.evaluated_depsgraph_get()
             # We use the depsgraph to get a mesh with uv and all data
@@ -546,7 +559,7 @@ class Poly(Object):
 
     # ------------------------------
     class Surface:
-        def __init__(	self,
+        def __init__(   self,
                       export_config,
                       bl_face,
                       ac_mats,
@@ -555,7 +568,7 @@ class Poly(Object):
                       uv_coords,
                       surf_type):
             self.export_config = export_config
-            self.mat = 0		# material index for this surface
+            self.mat = 0        # material index for this surface
             self.bl_face_vertices = None
             self.surf_ref = None
             self.uv_coords = uv_coords
@@ -682,13 +695,13 @@ class Material:
                  name='DefaultWhite',
                  bl_mat=None,
                  export_config=None):
-        self.name = name								# string
-        self.rgb = [1.0, 1.0, 1.0]			# [R,G,B]
-        self.amb = [0.8, 0.8, 0.8]			# [R,G,B]
-        self.emis = [0.0, 0.0, 0.0]			# [R,G,B]
-        self.spec = [0.5, 0.5, 0.5]			# [R,G,B]
-        self.shi = 64										# integer
-        self.trans = 0									# float
+        self.name = name                                # string
+        self.rgb = [1.0, 1.0, 1.0]          # [R,G,B]
+        self.amb = [0.8, 0.8, 0.8]          # [R,G,B]
+        self.emis = [0.0, 0.0, 0.0]         # [R,G,B]
+        self.spec = [0.5, 0.5, 0.5]         # [R,G,B]
+        self.shi = 64                                       # integer
+        self.trans = 0                                  # float
         self.merge = False
         self.default = True
         self.export_config = export_config

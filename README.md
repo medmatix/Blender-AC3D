@@ -4,6 +4,8 @@
 It's a few python scripts to import/export Inivis AC3D data into and out of Blender 2.80.
 
 ## How do I install it?
+Know that the auto-install feature in Blender is not supported, you will have to do it manually:
+
 Open the blender/x.x/scripts/addons folder, then pull the io_scene_ac3d folder into the addons folder of blender. There's an alternative location you can drop it, at ~/.blender/x.x/scripts/addons (linux) or c:\Users\[username]\AppData\Roaming\Blender Foundation\Blender\x.x\scrips\addons (Windows 7+), where x.x is the version of Blender and [username] is the Windows user name. Notice AppData per default is hidden in Windows, but you can just write it in the address bar.
 
 ## I can't see it in the import/export menu!

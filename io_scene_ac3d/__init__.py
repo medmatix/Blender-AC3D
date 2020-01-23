@@ -166,7 +166,8 @@ class AC3D_OT_Import(Operator, ImportHelper):
                                             "axis_up",
                                             "filter_glob",
                                             "rotation",
-                                            "translation"))
+                                            "translation",
+                                            "hide_props_region"))
 
         eul = Euler((radians(self.rotation[0]),
                      radians(self.rotation[1]),

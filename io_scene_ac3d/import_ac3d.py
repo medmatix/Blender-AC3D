@@ -166,7 +166,7 @@ class AcMat:
             speccy.inputs['Roughness'].default_value = 1-rough
         else:
             bl_mat.use_nodes = True
-            bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+            bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext('Principled BSDF')]
             bsdf.inputs['Emission'].default_value = self.emis4
             bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
             bsdf.inputs['Base Color'].default_value = self.rgb4
@@ -202,9 +202,9 @@ class AcMat:
 
                 bsdf = None
                 if self.import_config.useEeveeSpecular:
-                    bsdf = bl_mat.node_tree.nodes["Specular"]
+                    bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext("Specular")]
                 else:
-                    bsdf = bl_mat.node_tree.nodes["Principled BSDF"]
+                    bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext("Principled BSDF")]
                     
                 texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
                 texImage.image = self.get_blender_image(tex_name)

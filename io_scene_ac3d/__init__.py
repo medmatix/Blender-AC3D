@@ -37,12 +37,12 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (3, 3),
-    "blender": (2, 80, 0),
+    "version": (4, 1),
+    "blender": (3, 2, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",
     "warning": "",
-    "wiki_url": (
+    "doc_url": (
         "http://wiki.flightgear.org/Blender_AC3D_import_and_export"
         "#Majic79_addon"),
     "tracker_url": "https://github.com/NikolaiVChr/Blender-AC3D/issues"

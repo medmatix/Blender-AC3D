@@ -283,11 +283,7 @@ class Poly(Object):
         self._parseFaces(mesh)
 
         if not self.crease:
-            if mesh.use_auto_smooth:
-                self.crease = round(degrees(mesh.auto_smooth_angle), 3)
-            else:
-                self.crease = round(
-                    degrees(self.export_config.crease_angle), 3)
+            self.crease = round(degrees(self.export_config.crease_angle), 3)
         
         mesh = None
         self.bl_obj_copy.to_mesh_clear()# needed since object own the mesh and we dont need it anymore

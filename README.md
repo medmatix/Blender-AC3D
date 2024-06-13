@@ -1,7 +1,7 @@
-# Blender-AC3D - Version 5.0
+# Blender-AC3D - Version 6.0
 
 ## What is it?
-It's a few python scripts to import/export Inivis AC3D data into and out of Blender 4.0+.
+It's a few python scripts to import/export Inivis AC3D data into and out of Blender 4.1+.
 
 ## How do I install it?
 Know that the auto-install feature in Blender is not supported, you will have to do it manually:

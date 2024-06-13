@@ -529,8 +529,6 @@ class AcObj:
 
         # make sure we have something to work with
         if self.vert_list and me:
-            me.use_auto_smooth = self.use_crease
-            me.auto_smooth_angle = radians(self.crease)
             two_sided_lighting = False
             has_uv = False
 
@@ -603,6 +601,7 @@ class AcObj:
                         # (if there is only 1) will be assigned to every edge
                         # in the object.
                         me.materials.append(bl_material)
+            me.set_sharp_from_angle(angle=radians(self.crease))
 
             # print(len(self.vert_list))
             me.from_pydata(self.vert_list, self.edge_list, self.face_list)

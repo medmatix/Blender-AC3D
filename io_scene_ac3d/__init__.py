@@ -37,8 +37,8 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (5, 0),
-    "blender": (4, 0, 0),
+    "version": (6, 0),
+    "blender": (4, 1, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",
     "warning": "",
@@ -337,10 +337,9 @@ class AC3D_OT_Export(Operator, ExportHelper):
         default=False,
     )
     crease_angle: FloatProperty(
-        name="Default Crease Angle",
+        name="Crease Angle",
         description=(
-            "Default crease/smooth angle for exported .ac "
-            "faces that has not explicit set it."),
+            "Crease/smooth angle for all exported .ac faces."),
         default=radians(40.0),
         options={"ANIMATABLE"},
         unit="ROTATION",

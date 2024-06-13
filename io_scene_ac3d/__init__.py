@@ -37,7 +37,7 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (6, 0),
+    "version": (6, 1),
     "blender": (4, 1, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",
@@ -207,7 +207,7 @@ class AC3D_OT_Message(Operator):
 
     def invoke(self, context, event):
         wm = context.window_manager
-        return wm.invoke_popup(self, width=400, height=200)
+        return wm.invoke_popup(self, width=400)
 
     def draw(self, context):
         self.layout.label(text="A message has arrived")

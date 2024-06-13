@@ -1,4 +1,4 @@
-# Blender-AC3D - Version 6.0
+# Blender-AC3D - Version 6.1
 
 ## What is it?
 It's a few python scripts to import/export Inivis AC3D data into and out of Blender 4.1+.

@@ -1,7 +1,20 @@
 # Blender-AC3D - Version 7.1
 
-## What is it?
-It's a few python scripts to import/export Inivis AC3D data into and out of Blender 4.3+.
+## About
+It's a few python scripts to import/export Inivis AC3D data into and out of Blender 2.63 to Blender 4.3.
+
+## Download
+
+| Blender Version                                                                                         | 
+|---------------------------------------------------------------------------------------------------------|
+| [Download for Blender 4.3](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/4.3.zip)      |
+| [Download for Blender 4.1](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/4.1.zip)      |
+| [Download for Blender 4.0](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/4.0.zip)      |
+| [Download for Blender 3.2](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/3.2.zip)      | 
+| [Download for Blender 3.0](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/3.0.zip)      |
+| [Download for Blender 2.80](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/2.80.zip)    |
+| [Download for Blender 2.7.9](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/2.79.zip)   |
+| [Download for Blender 2.6.x](https://github.com/NikolaiVChr/Blender-AC3D/archive/refs/heads/bl2.6.zip)  |
 
 ## How do I install it?
 Know that the auto-install feature in Blender is not supported, you will have to do it manually:
@@ -9,7 +22,7 @@ Know that the auto-install feature in Blender is not supported, you will have to
 Open the blender/x.x/scripts/addons folder, then pull the io_scene_ac3d folder into the addons folder of blender. There's an alternative location you can drop it, at ~/.blender/x.x/scripts/addons (linux) or c:\Users\[username]\AppData\Roaming\Blender Foundation\Blender\x.x\scrips\addons (Windows 7+), where x.x is the version of Blender and [username] is the Windows user name. Notice AppData per default is hidden in Windows, but you can just write it in the address bar.
 
 ## I can't see it in the import/export menu!
-You'll need to enable the script in the user preferences window after installing it - open the user preferences window (File->User Preferences or Ctrl-Alt-U) and then go to the Add-on tab, click the button for Import-Export and then check the box on the right of "Import-Export: AC3D (.ac)"
+You'll need to enable the script in the user preferences window after installing it - open the user preferences window (Edit->Preferences) and then go to the Add-on tab, click the button for Import-Export and then check the box on the right of "Import-Export: AC3D (.ac)"
 
 ## Uh, I've done all that how do I use it?
 Go to File->Import->AC3D (.ac), select a file, adapt the import settings to your liking, and let it do the work.

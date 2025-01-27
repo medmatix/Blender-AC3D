@@ -37,7 +37,7 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (7, 1),
+    "version": (7, 2),
     "blender": (4, 3, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",

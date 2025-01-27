@@ -741,7 +741,10 @@ class Material:
                     #principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
                     principled = curr_shader
                     emis_color = principled.inputs['Emission Color']
-                    self.emis = emis_color.default_value
+                    if principled.inputs['Emission Strength'].default_value == 0.0:
+                        self.emis = [0,0,0]
+                    else:
+                        self.emis = emis_color.default_value
                     alpha = principled.inputs['Alpha']
                     self.trans = 1.0 - alpha.default_value
                     rough = 1-principled.inputs['Roughness'].default_value

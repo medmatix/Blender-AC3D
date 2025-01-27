@@ -1,4 +1,4 @@
-# Blender-AC3D - Version 7.1
+# Blender-AC3D - Version 7.2
 
 ## About
 It's a few python scripts to import/export Inivis AC3D data into and out of Blender 2.63 to Blender 4.3.

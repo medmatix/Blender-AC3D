@@ -37,7 +37,7 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (7, 0),
+    "version": (7, 1),
     "blender": (4, 3, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",
@@ -51,11 +51,11 @@ bl_info = {
 # To support reload properly, try to access a package var, if it's there,
 # reload everything
 if "bpy" in locals():
-    import imp
+    import importlib
     if 'import_ac3d' in locals():
-        imp.reload(import_ac3d)
+        importlib.reload(import_ac3d)
     if 'export_ac3d' in locals():
-        imp.reload(export_ac3d)
+        importlib.reload(export_ac3d)
 
 
 def menu_func_import(self, context):

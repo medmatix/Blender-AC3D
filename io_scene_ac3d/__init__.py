@@ -37,8 +37,8 @@ bl_info = {
     "name": "AC3D (.ac) format",
     "description": "Inivis AC3D model exporter for Blender.",
     "author": "Willian P Gerano, Chris Marr, Thomas Geymayer, Nikolai V. Chr., Scott Giese",
-    "version": (6, 1),
-    "blender": (4, 1, 0),
+    "version": (7, 0),
+    "blender": (4, 3, 0),
     "category": "Import-Export",
     "location": "File > Import-Export",
     "warning": "",
@@ -127,10 +127,10 @@ class AC3D_OT_Import(Operator, ImportHelper):
 #            "view and Render view)"),
 #        default=False)
         
-    useEeveeSpecular: BoolProperty(
-        name="Use Eevee Specular",
-        description="Set materials to use Eevee Specular instead of Principled BSDF",
-        default=False)
+#    useEeveeSpecular: BoolProperty(
+#        name="Use Eevee Specular",
+#        description="Set materials to use Eevee Specular instead of Principled BSDF",
+#        default=False)
 
 
     rotation: FloatVectorProperty(

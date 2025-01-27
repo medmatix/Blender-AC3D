@@ -148,31 +148,14 @@ class AcMat:
         bl_mat.diffuse_color = self.rgba
         bl_mat.specular_intensity = sum(self.spec)/3.0
         
-        if self.import_config.useEeveeSpecular:
-            bl_mat.use_nodes = True
-            bl_mat.node_tree.links.clear()
-            bl_mat.node_tree.nodes.clear()
-            bl_mat.use_nodes = True # It gets unset after clearing, so we set it again
-        
-            out = bl_mat.node_tree.nodes.new( type = 'ShaderNodeOutputMaterial' )
-            speccy = bl_mat.node_tree.nodes.new( type = 'ShaderNodeEeveeSpecular' )#create new specular mat
-        
-            link   = bl_mat.node_tree.links.new(speccy.outputs['BSDF'], out.inputs['Surface'])#set that mat as default
-        
-            speccy.inputs['Emissive Color'].default_value = self.emis4
-            speccy.inputs['Transparency'].default_value = self.trans
-            speccy.inputs['Base Color'].default_value = self.rgb4
-            speccy.inputs['Specular'].default_value = self.spec4
-            speccy.inputs['Roughness'].default_value = 1-rough
-        else:
-            bl_mat.use_nodes = True
-            bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext('Principled BSDF')]
-            bsdf.inputs['Emission Color'].default_value = self.emis4
-            bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
-            bsdf.inputs['Base Color'].default_value = self.rgb4
-            bsdf.inputs['Specular IOR Level'].default_value = sum(self.spec)/3.0
-            #bsdf.inputs['IOR'].default_value = 1.0
-            #bsdf.inputs['Transmission'].default_value = 1.0
+        bl_mat.use_nodes = True
+        bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext('Principled BSDF')]
+        bsdf.inputs['Emission Color'].default_value = self.emis4
+        bsdf.inputs['Alpha'].default_value = 1.0 - self.trans
+        bsdf.inputs['Base Color'].default_value = self.rgb4
+        bsdf.inputs['Specular Tint'].default_value = self.spec4
+        #bsdf.inputs['IOR'].default_value = 1.0
+        #bsdf.inputs['Transmission'].default_value = 1.0
         
         return bl_mat
 
@@ -201,10 +184,7 @@ class AcMat:
                 bl_mat = self.make_blender_mat(bl_mat)
 
                 bsdf = None
-                if self.import_config.useEeveeSpecular:
-                    bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext("Specular")]
-                else:
-                    bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext("Principled BSDF")]
+                bsdf = bl_mat.node_tree.nodes[bpy.app.translations.pgettext("Principled BSDF")]
                     
                 texImage = bl_mat.node_tree.nodes.new('ShaderNodeTexImage')
                 texImage.image = self.get_blender_image(tex_name)
@@ -862,8 +842,7 @@ class ImportConf:
             use_amb_as_mircol,
             display_textured_solid,
             parent_to,
-            collection_name,
-            useEeveeSpecular):
+            collection_name):
 
         # Stuff that needs to be available to the working classes (ha!)
         self.operator = operator
@@ -877,7 +856,6 @@ class ImportConf:
 #        self.hide_hidden_objects = hide_hidden_objects
         self.parent_to = parent_to
         self.collection_name = collection_name
-        self.useEeveeSpecular = useEeveeSpecular
 
         # used to determine relative file paths
         self.importdir = os.path.dirname(filepath)
@@ -898,8 +876,7 @@ class AC3D_OT_Import:
             use_amb_as_mircol=False,
             display_textured_solid=False,
             parent_to="",
-            collection_name="",
-            useEeveeSpecular=False):
+            collection_name=""):
 
         self.import_config = ImportConf(
             operator,
@@ -911,8 +888,7 @@ class AC3D_OT_Import:
             use_amb_as_mircol,
             display_textured_solid,
             parent_to,
-            collection_name,
-            useEeveeSpecular)
+            collection_name)
 
         self.tokens = {
             'MATERIAL':		self.read_material,

@@ -22,6 +22,7 @@ import bpy
 import os
 import shutil
 import re
+import traceback
 from math import radians, degrees
 from mathutils import Vector, Matrix
 
@@ -739,7 +740,7 @@ class Material:
                 if curr_shader.type == 'BSDF_PRINCIPLED':
                     #principled = next(n for n in nodes if n.type == 'BSDF_PRINCIPLED')
                     principled = curr_shader
-                    emis_color = principled.inputs['Emission']
+                    emis_color = principled.inputs['Emission Color']
                     self.emis = emis_color.default_value
                     alpha = principled.inputs['Alpha']
                     self.trans = 1.0 - alpha.default_value
@@ -748,8 +749,8 @@ class Material:
                     if not base.links or len(base.links) == 0:
                         # no texture applied to base color, so we grab the color value
                         self.rgb = base.default_value
-                    specu = principled.inputs['Specular']
-                    self.spec = [specu.default_value,specu.default_value,specu.default_value]
+                    specu = principled.inputs['Specular Tint']
+                    self.spec = [specu.default_value[0],specu.default_value[1],specu.default_value[2]]
                 elif curr_shader.type == 'BSDF_DIFFUSE':
                     diffuse = curr_shader
                     rough = 1-diffuse.inputs['Roughness'].default_value
@@ -787,6 +788,8 @@ class Material:
                     self.trans = 1.0-bl_mat.diffuse_color[3]
                     print( 'Material '+bl_mat.name+' is not Principled BSDF or Specular using nodes, Emission not exported' )
             except:
+                #if bl_mat.name == 'fuselage2Mat.000':
+                #    traceback.print_exc()
                 self.spec = bl_mat.specular_intensity * bl_mat.specular_color
                 rough = 1-bl_mat.roughness
                 self.rgb = bl_mat.diffuse_color
